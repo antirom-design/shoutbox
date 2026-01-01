@@ -4,7 +4,11 @@
       "Bash(mkdir:*)",
       "Bash(git init:*)",
       "Bash(git add:*)",
-      "Bash(git commit -m \"$(cat <<''EOF''\nInitial commit: Shoutbox messenger-first gaming platform\n\n- Backend: Node.js + Socket.io + Redis with full room management\n- Frontend: React + Vite with real-time chat UI\n- Game: Poll system with live voting and results\n- Deployment configs for Render (backend) and Vercel (frontend)\n- Zero-friction onboarding (no account required)\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n)\")"
+      "Bash(git commit -m \"$(cat <<''EOF''\nInitial commit: Shoutbox messenger-first gaming platform\n\n- Backend: Node.js + Socket.io + Redis with full room management\n- Frontend: React + Vite with real-time chat UI\n- Game: Poll system with live voting and results\n- Deployment configs for Render (backend) and Vercel (frontend)\n- Zero-friction onboarding (no account required)\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git commit:*)",
+      "Bash(gh repo create:*)",
+      "Bash(vercel:*)",
+      "Bash(git push:*)"
     ]
   }
 }

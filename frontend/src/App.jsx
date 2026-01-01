@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 import { nanoid } from 'nanoid';
+import TestScreen from './components/TestScreen';
 import NameInput from './components/NameInput';
 import RoomJoin from './components/RoomJoin';
 import ChatRoom from './components/ChatRoom';
@@ -8,26 +9,33 @@ import './App.css';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 
-// States: ANONYMOUS → NAMED → IN_ROOM → (PLAYING)
+// States: TESTING → ANONYMOUS → NAMED → IN_ROOM → (PLAYING)
 const STATES = {
+  TESTING: 'TESTING',
   ANONYMOUS: 'ANONYMOUS',
   NAMED: 'NAMED',
   IN_ROOM: 'IN_ROOM'
 };
 
 function App() {
-  const [appState, setAppState] = useState(STATES.ANONYMOUS);
+  const [appState, setAppState] = useState(STATES.TESTING);
   const [user, setUser] = useState(null);
   const [room, setRoom] = useState(null);
   const [messages, setMessages] = useState([]);
   const [participants, setParticipants] = useState([]);
   const [gameState, setGameState] = useState(null);
   const [error, setError] = useState(null);
+  const [testReport, setTestReport] = useState(null);
 
   const socketRef = useRef(null);
 
   // Initialize socket and local storage
   useEffect(() => {
+    // Only connect socket if tests passed
+    if (appState === STATES.TESTING) {
+      return;
+    }
+
     // Get or create local UUID
     let localUUID = localStorage.getItem('shoutbox_uuid');
     if (!localUUID) {
@@ -95,7 +103,7 @@ function App() {
         socketRef.current.disconnect();
       }
     };
-  }, []);
+  }, [appState]);
 
   const handleSetName = (displayName) => {
     const localUUID = localStorage.getItem('shoutbox_uuid');
@@ -139,12 +147,28 @@ function App() {
     });
   };
 
+  const handleTestsPass = () => {
+    setAppState(STATES.ANONYMOUS);
+  };
+
+  const handleTestsFail = (report) => {
+    setTestReport(report);
+  };
+
   return (
     <div className="app">
       {error && (
         <div className="error-banner">
           {error}
         </div>
+      )}
+
+      {appState === STATES.TESTING && (
+        <TestScreen
+          backendUrl={BACKEND_URL}
+          onTestsPass={handleTestsPass}
+          onTestsFail={handleTestsFail}
+        />
       )}
 
       {appState === STATES.ANONYMOUS && (
