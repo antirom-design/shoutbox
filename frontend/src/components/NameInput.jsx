@@ -17,6 +17,7 @@ function NameInput({ onSubmit }) {
       return;
     }
 
+    console.log('NameInput: Submitting name:', name);
     onSubmit(name);
   };
 

@@ -36,6 +36,13 @@ function App() {
       return;
     }
 
+    // Don't reconnect if already connected
+    if (socketRef.current && socketRef.current.connected) {
+      return;
+    }
+
+    console.log('Initializing socket connection to:', BACKEND_URL);
+
     // Get or create local UUID
     let localUUID = localStorage.getItem('shoutbox_uuid');
     if (!localUUID) {
@@ -46,23 +53,29 @@ function App() {
     const lastDisplayName = localStorage.getItem('shoutbox_last_name');
 
     // Connect to socket
-    socketRef.current = io(BACKEND_URL);
+    socketRef.current = io(BACKEND_URL, {
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionAttempts: 5
+    });
 
     socketRef.current.on('connect', () => {
-      console.log('Connected to server');
+      console.log('✅ Connected to server, socket ID:', socketRef.current.id);
       setError(null);
     });
 
     socketRef.current.on('disconnect', () => {
-      console.log('Disconnected from server');
+      console.log('❌ Disconnected from server');
     });
 
     socketRef.current.on('error', (err) => {
+      console.error('Socket error:', err);
       setError(err.message);
       setTimeout(() => setError(null), 5000);
     });
 
     socketRef.current.on('session_created', ({ sessionToken, userId }) => {
+      console.log('✅ Session created:', { sessionToken, userId });
       setUser(prev => ({ ...prev, sessionToken, userId }));
       setAppState(STATES.NAMED);
     });
@@ -107,6 +120,14 @@ function App() {
 
   const handleSetName = (displayName) => {
     const localUUID = localStorage.getItem('shoutbox_uuid');
+
+    if (!socketRef.current || !socketRef.current.connected) {
+      console.error('Socket not connected! Reconnecting...');
+      setError('Connection lost. Please refresh the page.');
+      return;
+    }
+
+    console.log('Sending set_name:', { displayName, localUUID });
     socketRef.current.emit('set_name', { displayName, localUUID });
     setUser({ localUUID, displayName });
     localStorage.setItem('shoutbox_last_name', displayName);
