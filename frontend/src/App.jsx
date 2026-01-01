@@ -29,19 +29,9 @@ function App() {
 
   const socketRef = useRef(null);
 
-  // Initialize socket and local storage
+  // Initialize socket and local storage - runs ONCE on mount
   useEffect(() => {
-    // Only connect socket if tests passed
-    if (appState === STATES.TESTING) {
-      return;
-    }
-
-    // Don't reconnect if already connected
-    if (socketRef.current && socketRef.current.connected) {
-      return;
-    }
-
-    console.log('Initializing socket connection to:', BACKEND_URL);
+    console.log('🔌 Initializing socket connection to:', BACKEND_URL);
 
     // Get or create local UUID
     let localUUID = localStorage.getItem('shoutbox_uuid');
@@ -52,7 +42,7 @@ function App() {
 
     const lastDisplayName = localStorage.getItem('shoutbox_last_name');
 
-    // Connect to socket
+    // Connect to socket immediately (even during test screen)
     socketRef.current = io(BACKEND_URL, {
       reconnection: true,
       reconnectionDelay: 1000,
@@ -116,18 +106,24 @@ function App() {
         socketRef.current.disconnect();
       }
     };
-  }, [appState]);
+  }, []); // Run only once on mount
 
   const handleSetName = (displayName) => {
     const localUUID = localStorage.getItem('shoutbox_uuid');
 
-    if (!socketRef.current || !socketRef.current.connected) {
-      console.error('Socket not connected! Reconnecting...');
-      setError('Connection lost. Please refresh the page.');
+    if (!socketRef.current) {
+      console.error('❌ Socket not initialized!');
+      setError('Connection error. Please refresh the page.');
       return;
     }
 
-    console.log('Sending set_name:', { displayName, localUUID });
+    if (!socketRef.current.connected) {
+      console.error('❌ Socket not connected! Current state:', socketRef.current.connected);
+      setError('Not connected to server. Please wait and try again.');
+      return;
+    }
+
+    console.log('📤 Sending set_name:', { displayName, localUUID });
     socketRef.current.emit('set_name', { displayName, localUUID });
     setUser({ localUUID, displayName });
     localStorage.setItem('shoutbox_last_name', displayName);
