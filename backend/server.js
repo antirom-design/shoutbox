@@ -19,7 +19,24 @@ const io = new Server(httpServer, {
 });
 
 // Redis setup
-const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
+console.log('🔌 Connecting to Redis:', process.env.REDIS_URL ? 'Using REDIS_URL env var' : 'Using localhost fallback');
+const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379', {
+  retryStrategy: (times) => {
+    const delay = Math.min(times * 50, 2000);
+    console.log(`⚠️ Redis retry attempt ${times}, waiting ${delay}ms`);
+    return delay;
+  },
+  maxRetriesPerRequest: 3
+});
+
+redis.on('connect', () => {
+  console.log('✅ Redis connected successfully');
+});
+
+redis.on('error', (err) => {
+  console.error('❌ Redis connection error:', err.message);
+  console.error('Redis URL:', process.env.REDIS_URL || 'NOT SET - using localhost');
+});
 
 // Middleware
 app.use(cors());
