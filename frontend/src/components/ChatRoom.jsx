@@ -11,6 +11,7 @@ function ChatRoom({
   isOwner = false,
   onLeaveRoom,
   onSendMessage,
+  onInputChange,
   onStartPoll,
   onVote,
   onEndPoll,
@@ -35,6 +36,11 @@ function ChatRoom({
     if (messageText.trim()) {
       onSendMessage(messageText);
       setMessageText('');
+      // Clear the input which will trigger onInputChange with empty string
+      // This will reset the typing timeout but we should explicitly stop typing
+      if (onInputChange) {
+        onInputChange('');
+      }
     }
   };
 
@@ -47,7 +53,7 @@ function ChatRoom({
             {participants.filter(p => p.isOnline).map(p => (
               <span
                 key={p.userId}
-                className={`participant-badge ${p.isHousemaster ? 'participant-housemaster' : ''}`}
+                className={`participant-badge ${p.isHousemaster ? 'participant-housemaster' : ''} ${p.isTyping ? 'participant-typing' : ''}`}
               >
                 {p.displayName}
               </span>
@@ -94,7 +100,13 @@ function ChatRoom({
           <input
             type="text"
             value={messageText}
-            onChange={(e) => setMessageText(e.target.value)}
+            onChange={(e) => {
+              const newValue = e.target.value;
+              setMessageText(newValue);
+              if (onInputChange) {
+                onInputChange(newValue);
+              }
+            }}
             placeholder="Type a message..."
             maxLength={500}
           />

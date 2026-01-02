@@ -37,6 +37,33 @@
   box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
 }
 
+.participant-typing {
+  position: relative;
+  animation: typing-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes typing-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.7), 0 0 0 0 rgba(102, 126, 234, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.4), 0 0 0 8px rgba(102, 126, 234, 0.2);
+  }
+}
+
+.participant-housemaster.participant-typing {
+  animation: typing-pulse-gold 1.5s ease-in-out infinite;
+}
+
+@keyframes typing-pulse-gold {
+  0%, 100% {
+    box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3), 0 0 0 0 rgba(255, 165, 0, 0.7);
+  }
+  50% {
+    box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3), 0 0 0 4px rgba(255, 165, 0, 0.4), 0 0 0 8px rgba(255, 165, 0, 0.2);
+  }
+}
+
 .btn-share {
   background: #667eea;
   color: white;

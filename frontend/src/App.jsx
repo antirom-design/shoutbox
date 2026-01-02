@@ -35,6 +35,7 @@ function App() {
 
   const wsRef = useRef(null);
   const sessionIdRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
 
   // Initialize session ID - use sessionStorage for per-tab uniqueness
   useEffect(() => {
@@ -252,6 +253,15 @@ function App() {
         setMessages(prev => [...prev, systemMsg]);
         break;
 
+      case 'userTyping':
+        // Update participant's typing status
+        setParticipants(prev => prev.map(p =>
+          p.id === data.sessionId
+            ? { ...p, isTyping: data.isTyping }
+            : p
+        ));
+        break;
+
       case 'error':
         setError(data.message);
         setTimeout(() => setError(null), 5000);
@@ -290,6 +300,12 @@ function App() {
   };
 
   const handleLeaveRoom = () => {
+    // Clear typing timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = null;
+    }
+
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       wsRef.current.close();
     }
@@ -305,6 +321,13 @@ function App() {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
       setError('Not connected. Please refresh.');
       return;
+    }
+
+    // Stop typing indicator when message is sent
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = null;
+      handleTypingStop();
     }
 
     const chatMessage = {
@@ -422,6 +445,54 @@ function App() {
     setPollState(null);
   };
 
+  const handleTypingStart = () => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+      return;
+    }
+
+    // Send typing start event
+    wsRef.current.send(JSON.stringify({
+      type: 'typing',
+      data: {
+        sessionId: sessionIdRef.current,
+        isTyping: true
+      }
+    }));
+  };
+
+  const handleTypingStop = () => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+      return;
+    }
+
+    // Send typing stop event
+    wsRef.current.send(JSON.stringify({
+      type: 'typing',
+      data: {
+        sessionId: sessionIdRef.current,
+        isTyping: false
+      }
+    }));
+  };
+
+  const handleInputChange = (text) => {
+    // Clear existing timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    } else {
+      // First keystroke - send typing start
+      handleTypingStart();
+    }
+
+    // Set timeout to stop typing indicator after 2 seconds of inactivity
+    typingTimeoutRef.current = setTimeout(() => {
+      handleTypingStop();
+      typingTimeoutRef.current = null;
+    }, 2000);
+
+    return text;
+  };
+
   const handleTestsPass = () => {
     setAppState(STATES.ANONYMOUS);
   };
@@ -466,13 +537,15 @@ function App() {
             userId: p.id,
             displayName: p.name,
             isOnline: true,
-            isHousemaster: p.isHousemaster || false
+            isHousemaster: p.isHousemaster || false,
+            isTyping: p.isTyping || false
           }))}
           gameState={pollState}
           currentUser={{ userId: sessionIdRef.current, ...user }}
           isOwner={isHousemaster}
           onLeaveRoom={handleLeaveRoom}
           onSendMessage={handleSendMessage}
+          onInputChange={handleInputChange}
           onStartPoll={handleStartPoll}
           onVote={handleVote}
           onEndPoll={handleEndPoll}
