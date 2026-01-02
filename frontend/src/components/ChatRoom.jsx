@@ -148,7 +148,7 @@ function MessageItem({ message, currentUserId, gameState, onVote }) {
                     key={idx}
                     className={`poll-option ${hasVoted ? 'poll-option-voted' : ''}`}
                     onClick={() => onVote(idx)}
-                    disabled={!gameState?.activeGame}
+                    disabled={!gameState?.active}
                   >
                     <div className="poll-option-bar" style={{ width: `${percentage}%` }} />
                     <span className="poll-option-text">{option}</span>
