@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import './ChatRoom.css';
 
 function ChatRoom({
@@ -15,6 +16,7 @@ function ChatRoom({
 }) {
   const [messageText, setMessageText] = useState('');
   const [showPollForm, setShowPollForm] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -42,14 +44,19 @@ function ChatRoom({
           <div className="participants-bar">
             {participants.filter(p => p.isOnline).map(p => (
               <span key={p.userId} className="participant-badge">
-                {p.displayName}
+                {p.isHousemaster && '👑 '}{p.displayName}
               </span>
             ))}
           </div>
         </div>
-        <button className="btn-leave" onClick={onLeaveRoom}>
-          Leave
-        </button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button className="btn-share" onClick={() => setShowShareModal(true)}>
+            🔗 Share
+          </button>
+          <button className="btn-leave" onClick={onLeaveRoom}>
+            Leave
+          </button>
+        </div>
       </div>
 
       <div className="messages-container">
@@ -96,6 +103,13 @@ function ChatRoom({
             setShowPollForm(false);
           }}
           onCancel={() => setShowPollForm(false)}
+        />
+      )}
+
+      {showShareModal && (
+        <ShareModal
+          roomCode={roomCode}
+          onClose={() => setShowShareModal(false)}
         />
       )}
     </div>
@@ -261,6 +275,42 @@ function PollForm({ onSubmit, onCancel }) {
             </button>
           </div>
         </form>
+      </div>
+    </div>
+  );
+}
+
+function ShareModal({ roomCode, onClose }) {
+  const shareUrl = `${window.location.origin}/?room=${roomCode}`;
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal share-modal" onClick={(e) => e.stopPropagation()}>
+        <h2>Join Room {roomCode}</h2>
+
+        <div style={{
+          background: 'white',
+          padding: '20px',
+          borderRadius: '8px',
+          display: 'flex',
+          justifyContent: 'center',
+          margin: '20px 0'
+        }}>
+          <QRCodeSVG value={shareUrl} size={200} />
+        </div>
+
+        <p style={{ textAlign: 'center', marginBottom: '20px' }}>
+          Scan to join this room
+        </p>
+
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={onClose}
+          style={{ width: '100%' }}
+        >
+          Close
+        </button>
       </div>
     </div>
   );

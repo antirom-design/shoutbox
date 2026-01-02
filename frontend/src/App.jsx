@@ -31,6 +31,7 @@ function App() {
   const [pollState, setPollState] = useState(null);
   const [error, setError] = useState(null);
   const [isHousemaster, setIsHousemaster] = useState(false);
+  const [autoJoinRoom, setAutoJoinRoom] = useState(null);
 
   const wsRef = useRef(null);
   const sessionIdRef = useRef(null);
@@ -44,6 +45,16 @@ function App() {
     }
     sessionIdRef.current = sessionId;
     console.log('🆔 Session ID:', sessionId);
+  }, []);
+
+  // Check for room code in URL params
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const roomParam = params.get('room');
+    if (roomParam) {
+      console.log('🔗 Auto-join room from URL:', roomParam);
+      setAutoJoinRoom(roomParam.toUpperCase());
+    }
   }, []);
 
   // WebSocket connection
@@ -205,7 +216,15 @@ function App() {
   const handleSetName = (displayName) => {
     setUser({ displayName });
     localStorage.setItem('shoutbox_last_name', displayName);
-    setAppState(STATES.NAMED);
+
+    // Auto-join room if coming from share link
+    if (autoJoinRoom) {
+      setRoomCode(autoJoinRoom);
+      setAppState(STATES.IN_ROOM);
+      setAutoJoinRoom(null);
+    } else {
+      setAppState(STATES.NAMED);
+    }
   };
 
   const handleCreateRoom = () => {
@@ -335,7 +354,8 @@ function App() {
           participants={participants.map(p => ({
             userId: p.id,
             displayName: p.name,
-            isOnline: true
+            isOnline: true,
+            isHousemaster: p.isHousemaster || false
           }))}
           gameState={pollState}
           currentUser={{ userId: sessionIdRef.current, ...user }}
