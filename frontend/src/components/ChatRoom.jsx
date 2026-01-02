@@ -101,8 +101,8 @@ function ChatRoom({
 
       {showPollForm && (
         <PollForm
-          onSubmit={(question, options) => {
-            onStartPoll(question, options);
+          onSubmit={(question, options, settings) => {
+            onStartPoll(question, options, settings);
             setShowPollForm(false);
           }}
           onCancel={() => setShowPollForm(false)}
@@ -121,6 +121,22 @@ function ChatRoom({
 
 function MessageItem({ message, currentUserId, gameState, onVote }) {
   const { type, payload, sender } = message;
+  const [countdown, setCountdown] = useState(0);
+
+  // Countdown timer for active polls
+  useEffect(() => {
+    if (type === 'game-event' && payload.gameType === 'poll' && payload.action === 'question' && gameState?.active && gameState?.endAt) {
+      const interval = setInterval(() => {
+        const remaining = Math.max(0, Math.floor((gameState.endAt - Date.now()) / 1000));
+        setCountdown(remaining);
+        if (remaining === 0) {
+          clearInterval(interval);
+        }
+      }, 100);
+
+      return () => clearInterval(interval);
+    }
+  }, [type, payload, gameState?.active, gameState?.endAt]);
 
   if (type === 'chat') {
     const isOwnMessage = sender === currentUserId;
@@ -149,27 +165,52 @@ function MessageItem({ message, currentUserId, gameState, onVote }) {
 
   if (type === 'game-event') {
     if (payload.gameType === 'poll' && payload.action === 'question') {
+      const isActive = gameState?.active;
+      const showRealtime = gameState?.showRealtime || false;
+      const userVote = gameState?.userVote;
+
+      // Timer color based on remaining time
+      const timerClass = countdown > 5 ? 'timer-green' : countdown > 2 ? 'timer-orange' : 'timer-red';
+
       return (
         <div className="game-event">
           <div className="poll-question">
-            <h3>{payload.data.question}</h3>
+            <div className="poll-header">
+              <h3>{payload.data.question}</h3>
+              {isActive && (
+                <div className={`poll-timer ${timerClass}`}>
+                  ⏱️ {countdown}s
+                </div>
+              )}
+            </div>
             <div className="poll-options">
               {payload.data.options.map((option, idx) => {
-                const voteCount = gameState?.gameData?.options[idx]?.votes?.length || 0;
-                const totalVotes = gameState?.gameData?.options.reduce((sum, opt) => sum + opt.votes.length, 0) || 0;
+                const optionData = gameState?.options?.[idx];
+                const voteCount = optionData?.votes?.length || 0;
+                const totalVotes = gameState?.options?.reduce((sum, opt) => sum + (opt.votes?.length || 0), 0) || 0;
                 const percentage = totalVotes > 0 ? Math.round((voteCount / totalVotes) * 100) : 0;
-                const hasVoted = gameState?.gameData?.options[idx]?.votes?.includes(currentUserId);
+                const isUserVote = userVote === idx;
+
+                // Show results if: not active OR showRealtime is enabled
+                const showResults = !isActive || showRealtime;
 
                 return (
                   <button
                     key={idx}
-                    className={`poll-option ${hasVoted ? 'poll-option-voted' : ''}`}
+                    className={`poll-option ${isUserVote ? 'poll-option-selected' : ''}`}
                     onClick={() => onVote(idx)}
-                    disabled={!gameState?.active}
+                    disabled={!isActive}
                   >
-                    <div className="poll-option-bar" style={{ width: `${percentage}%` }} />
-                    <span className="poll-option-text">{option}</span>
-                    <span className="poll-option-count">{voteCount}</span>
+                    {showResults && (
+                      <div className="poll-option-bar" style={{ width: `${percentage}%` }} />
+                    )}
+                    <span className="poll-option-text">
+                      {option}
+                      {isUserVote && ' ✓'}
+                    </span>
+                    {showResults && (
+                      <span className="poll-option-count">{voteCount} ({percentage}%)</span>
+                    )}
                   </button>
                 );
               })}
@@ -211,6 +252,8 @@ function MessageItem({ message, currentUserId, gameState, onVote }) {
 function PollForm({ onSubmit, onCancel }) {
   const [question, setQuestion] = useState('');
   const [options, setOptions] = useState(['', '']);
+  const [showRealtime, setShowRealtime] = useState(false);
+  const [duration, setDuration] = useState(10);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -218,7 +261,7 @@ function PollForm({ onSubmit, onCancel }) {
     const validOptions = options.filter(opt => opt.trim());
 
     if (question.trim() && validOptions.length >= 2) {
-      onSubmit(question, validOptions);
+      onSubmit(question, validOptions, { showRealtime, duration });
     }
   };
 
@@ -268,6 +311,29 @@ function PollForm({ onSubmit, onCancel }) {
               Add Option
             </button>
           )}
+
+          <div className="input-group" style={{ marginTop: '16px' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={showRealtime}
+                onChange={(e) => setShowRealtime(e.target.checked)}
+              />
+              Show results in real-time
+            </label>
+          </div>
+
+          <div className="input-group">
+            <label>⏱️ Voting time (seconds)</label>
+            <input
+              type="number"
+              value={duration}
+              onChange={(e) => setDuration(Math.max(5, Math.min(120, parseInt(e.target.value) || 10)))}
+              min="5"
+              max="120"
+              style={{ width: '100px' }}
+            />
+          </div>
 
           <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
             <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>

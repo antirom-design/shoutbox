@@ -145,7 +145,10 @@ function App() {
           active: true,
           question: data.question,
           options: data.options.map(opt => ({ text: opt, votes: [] })),
-          endAt: data.endAt
+          endAt: data.endAt,
+          showRealtime: data.showRealtime || false,
+          duration: data.duration || 30,
+          userVote: null
         });
 
         const pollStartMsg = {
@@ -166,10 +169,21 @@ function App() {
         break;
 
       case 'pollUpdate':
-        setPollState(prev => ({
-          ...prev,
-          options: data.options
-        }));
+        setPollState(prev => {
+          // Find which option the current user voted for
+          let userVote = prev.userVote;
+          data.options.forEach((opt, idx) => {
+            if (opt.votes && opt.votes.includes(sessionIdRef.current)) {
+              userVote = idx;
+            }
+          });
+
+          return {
+            ...prev,
+            options: data.options,
+            userVote
+          };
+        });
         break;
 
       case 'pollEnded':
@@ -274,7 +288,7 @@ function App() {
     wsRef.current.send(JSON.stringify(chatMessage));
   };
 
-  const handleStartPoll = (question, options) => {
+  const handleStartPoll = (question, options, settings = { showRealtime: false, duration: 10 }) => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
       setError('Not connected. Please refresh.');
       return;
@@ -285,7 +299,9 @@ function App() {
       data: {
         sessionId: sessionIdRef.current,
         question,
-        options
+        options,
+        showRealtime: settings.showRealtime,
+        duration: settings.duration
       }
     };
 
@@ -298,6 +314,12 @@ function App() {
       setError('Not connected. Please refresh.');
       return;
     }
+
+    // Optimistically update local state for instant feedback
+    setPollState(prev => ({
+      ...prev,
+      userVote: optionIndex
+    }));
 
     const voteMessage = {
       type: 'vote',
