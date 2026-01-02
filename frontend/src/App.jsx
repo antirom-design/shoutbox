@@ -6,8 +6,13 @@ import RoomJoin from './components/RoomJoin';
 import ChatRoom from './components/ChatRoom';
 import './App.css';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'ws://localhost:3001';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
 const WS_URL = BACKEND_URL.replace('https://', 'wss://').replace('http://', 'ws://');
+
+// Debug: Log what we're using
+console.log('🔧 DEBUG - BACKEND_URL from env:', import.meta.env.VITE_BACKEND_URL);
+console.log('🔧 DEBUG - Final BACKEND_URL:', BACKEND_URL);
+console.log('🔧 DEBUG - Final WS_URL:', WS_URL);
 
 // States: TESTING → ANONYMOUS → NAMED → IN_ROOM
 const STATES = {
