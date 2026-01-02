@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { io } from 'socket.io-client';
 import './TestScreen.css';
 
 function TestScreen({ backendUrl, onTestsPass, onTestsFail }) {
@@ -59,43 +58,51 @@ function TestScreen({ backendUrl, onTestsPass, onTestsFail }) {
       return;
     }
 
-    // Test 3: Socket.io Connection
+    // Test 3: WebSocket Connection
     updateTest('socket', 'running', 'Testing WebSocket connection...');
 
-    const socket = io(backendUrl, {
-      timeout: 10000,
-      transports: ['websocket', 'polling']
-    });
+    const wsUrl = backendUrl.replace('https://', 'wss://').replace('http://', 'ws://');
+    let ws = null;
 
-    const socketTimeout = setTimeout(() => {
-      socket.disconnect();
+    try {
+      ws = new WebSocket(wsUrl);
+
+      const socketTimeout = setTimeout(() => {
+        if (ws) ws.close();
+        updateTest('socket', 'failed',
+          'WebSocket connection timeout!',
+          `URL: ${wsUrl}\nTimeout after 10 seconds\n\nPossible causes:\n1. Backend not running\n2. WebSocket blocked by firewall\n3. Wrong backend URL`
+        );
+        generateErrorReport();
+      }, 10000);
+
+      ws.onopen = () => {
+        clearTimeout(socketTimeout);
+        updateTest('socket', 'passed', `WebSocket connected successfully`);
+        ws.close();
+
+        setAllTestsPassed(true);
+        setTimeout(() => {
+          onTestsPass();
+        }, 1500);
+      };
+
+      ws.onerror = (error) => {
+        clearTimeout(socketTimeout);
+        if (ws) ws.close();
+        updateTest('socket', 'failed',
+          'WebSocket connection failed!',
+          `URL: ${wsUrl}\nError: Connection refused\n\nCheck:\n1. Is Funkhaus backend running?\n2. Check Render logs for errors\n3. CORS might be blocking connection`
+        );
+        generateErrorReport();
+      };
+    } catch (error) {
       updateTest('socket', 'failed',
-        'Socket.io connection timeout!',
-        `URL: ${backendUrl}\nTimeout after 10 seconds\n\nPossible causes:\n1. CORS issue (check backend FRONTEND_URL env var)\n2. WebSocket blocked by firewall\n3. Backend not running Socket.io server`
+        'WebSocket error!',
+        `URL: ${wsUrl}\nError: ${error.message}`
       );
       generateErrorReport();
-    }, 10000);
-
-    socket.on('connect', () => {
-      clearTimeout(socketTimeout);
-      updateTest('socket', 'passed', `Connected (ID: ${socket.id})`);
-      socket.disconnect();
-
-      setAllTestsPassed(true);
-      setTimeout(() => {
-        onTestsPass();
-      }, 1500);
-    });
-
-    socket.on('connect_error', (error) => {
-      clearTimeout(socketTimeout);
-      socket.disconnect();
-      updateTest('socket', 'failed',
-        'Socket.io connection failed!',
-        `URL: ${backendUrl}\nError: ${error.message}\n\nCheck:\n1. Render backend logs for errors\n2. Backend FRONTEND_URL must be: ${window.location.origin}\n3. CORS settings in server.js`
-      );
-      generateErrorReport();
-    });
+    }
   };
 
   const updateTest = (testName, status, message, details = '') => {
