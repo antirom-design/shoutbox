@@ -148,7 +148,8 @@ function App() {
           endAt: data.endAt,
           showRealtime: data.showRealtime || false,
           duration: data.duration || 30,
-          userVote: null
+          multipleChoice: data.multipleChoice || false,
+          userVote: data.multipleChoice ? [] : null  // Array for multiple choice, single index for single choice
         });
 
         const pollStartMsg = {
@@ -170,13 +171,25 @@ function App() {
 
       case 'pollUpdate':
         setPollState(prev => {
-          // Find which option the current user voted for
-          let userVote = prev.userVote;
-          data.options.forEach((opt, idx) => {
-            if (opt.votes && opt.votes.includes(sessionIdRef.current)) {
-              userVote = idx;
-            }
-          });
+          // Find which option(s) the current user voted for
+          let userVote;
+          if (prev.multipleChoice) {
+            // For multiple choice, collect all indices where user has voted
+            userVote = [];
+            data.options.forEach((opt, idx) => {
+              if (opt.votes && opt.votes.includes(sessionIdRef.current)) {
+                userVote.push(idx);
+              }
+            });
+          } else {
+            // For single choice, find the one voted option
+            userVote = null;
+            data.options.forEach((opt, idx) => {
+              if (opt.votes && opt.votes.includes(sessionIdRef.current)) {
+                userVote = idx;
+              }
+            });
+          }
 
           return {
             ...prev,
@@ -189,21 +202,31 @@ function App() {
       case 'pollEnded':
         setPollState({ active: false });
 
-        const pollEndMsg = {
-          id: nanoid(),
-          type: 'game-event',
-          timestamp: Date.now(),
-          sender: null,
-          payload: {
-            gameType: 'poll',
-            action: 'result',
-            data: {
-              question: data.question,
-              results: data.results
+        // Remove the active poll question message and replace with results
+        setMessages(prev => {
+          // Filter out the poll question
+          const withoutQuestion = prev.filter(msg =>
+            !(msg.type === 'game-event' && msg.payload.gameType === 'poll' && msg.payload.action === 'question')
+          );
+
+          // Add result message
+          const pollEndMsg = {
+            id: nanoid(),
+            type: 'game-event',
+            timestamp: Date.now(),
+            sender: null,
+            payload: {
+              gameType: 'poll',
+              action: 'result',
+              data: {
+                question: data.question,
+                results: data.results
+              }
             }
-          }
-        };
-        setMessages(prev => [...prev, pollEndMsg]);
+          };
+
+          return [...withoutQuestion, pollEndMsg];
+        });
         break;
 
       case 'pollCanceled':
@@ -297,7 +320,7 @@ function App() {
     wsRef.current.send(JSON.stringify(chatMessage));
   };
 
-  const handleStartPoll = (question, options, settings = { showRealtime: false, duration: 10 }) => {
+  const handleStartPoll = (question, options, settings = { showRealtime: false, duration: 10, multipleChoice: false }) => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
       setError('Not connected. Please refresh.');
       return;
@@ -310,7 +333,8 @@ function App() {
         question,
         options,
         showRealtime: settings.showRealtime,
-        duration: settings.duration
+        duration: settings.duration,
+        multipleChoice: settings.multipleChoice
       }
     };
 
@@ -325,10 +349,29 @@ function App() {
     }
 
     // Optimistically update local state for instant feedback
-    setPollState(prev => ({
-      ...prev,
-      userVote: optionIndex
-    }));
+    setPollState(prev => {
+      let newUserVote;
+
+      if (prev.multipleChoice) {
+        // Toggle selection for multiple choice
+        const currentVotes = Array.isArray(prev.userVote) ? prev.userVote : [];
+        if (currentVotes.includes(optionIndex)) {
+          // Remove vote
+          newUserVote = currentVotes.filter(idx => idx !== optionIndex);
+        } else {
+          // Add vote
+          newUserVote = [...currentVotes, optionIndex];
+        }
+      } else {
+        // Single choice - replace vote
+        newUserVote = optionIndex;
+      }
+
+      return {
+        ...prev,
+        userVote: newUserVote
+      };
+    });
 
     const voteMessage = {
       type: 'vote',

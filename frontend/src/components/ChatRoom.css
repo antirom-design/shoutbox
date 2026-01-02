@@ -133,6 +133,14 @@
   margin: 0;
 }
 
+.poll-hint {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 12px;
+  font-style: italic;
+  text-align: center;
+}
+
 .poll-timer {
   font-size: 16px;
   font-weight: 600;

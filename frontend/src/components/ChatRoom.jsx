@@ -176,6 +176,7 @@ function MessageItem({ message, currentUserId, gameState, isOwner, onVote, onEnd
       const isActive = gameState?.active;
       const showRealtime = gameState?.showRealtime || false;
       const userVote = gameState?.userVote;
+      const multipleChoice = gameState?.multipleChoice || false;
       const hasTimeLimit = countdown >= 0;
 
       // Timer color based on remaining time
@@ -192,13 +193,20 @@ function MessageItem({ message, currentUserId, gameState, isOwner, onVote, onEnd
                 </div>
               )}
             </div>
+            {multipleChoice && isActive && (
+              <div className="poll-hint">Select one or more options</div>
+            )}
             <div className="poll-options">
               {payload.data.options.map((option, idx) => {
                 const optionData = gameState?.options?.[idx];
                 const voteCount = optionData?.votes?.length || 0;
                 const totalVotes = gameState?.options?.reduce((sum, opt) => sum + (opt.votes?.length || 0), 0) || 0;
                 const percentage = totalVotes > 0 ? Math.round((voteCount / totalVotes) * 100) : 0;
-                const isUserVote = userVote === idx;
+
+                // Check if user voted for this option (handle both single choice and multiple choice)
+                const isUserVote = multipleChoice
+                  ? (Array.isArray(userVote) && userVote.includes(idx))
+                  : userVote === idx;
 
                 // Show results if: not active OR showRealtime is enabled
                 const showResults = !isActive || showRealtime;
@@ -281,6 +289,7 @@ function PollForm({ onSubmit, onCancel }) {
   const [showRealtime, setShowRealtime] = useState(false);
   const [hasTimeLimit, setHasTimeLimit] = useState(true);
   const [duration, setDuration] = useState(10);
+  const [multipleChoice, setMultipleChoice] = useState(false);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -290,7 +299,8 @@ function PollForm({ onSubmit, onCancel }) {
     if (question.trim() && validOptions.length >= 2) {
       onSubmit(question, validOptions, {
         showRealtime,
-        duration: hasTimeLimit ? duration : null
+        duration: hasTimeLimit ? duration : null,
+        multipleChoice
       });
     }
   };
@@ -365,6 +375,15 @@ function PollForm({ onSubmit, onCancel }) {
 
           <div className="form-section poll-settings">
             <label className="form-label">Settings</label>
+
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={multipleChoice}
+                onChange={(e) => setMultipleChoice(e.target.checked)}
+              />
+              <span>Allow multiple choice</span>
+            </label>
 
             <label className="checkbox-label">
               <input
