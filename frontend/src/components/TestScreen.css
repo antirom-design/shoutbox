@@ -266,3 +266,54 @@
     transform: rotate(360deg);
   }
 }
+
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+  .test-screen {
+    padding: 0;
+  }
+
+  .test-card {
+    border-radius: 0;
+    padding: 20px;
+    max-width: 100%;
+  }
+
+  .test-card h1 {
+    font-size: 24px;
+  }
+
+  .test-card > p {
+    font-size: 14px;
+  }
+
+  .test-item {
+    padding: 12px;
+  }
+
+  .test-title {
+    font-size: 16px;
+  }
+
+  .test-message {
+    font-size: 13px;
+  }
+
+  .progress-bar-container {
+    height: 20px;
+  }
+
+  .progress-time {
+    font-size: 11px;
+  }
+
+  .cold-start-info {
+    font-size: 12px;
+    padding: 8px 12px;
+  }
+
+  .error-details {
+    font-size: 11px;
+    max-height: 200px;
+  }
+}
