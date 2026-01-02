@@ -7,6 +7,7 @@ function ChatRoom({
   participants,
   gameState,
   currentUser,
+  isOwner = false,
   onLeaveRoom,
   onSendMessage,
   onStartPoll,
@@ -32,9 +33,6 @@ function ChatRoom({
       setMessageText('');
     }
   };
-
-  const isOwner = participants.find(p => p.userId === currentUser?.userId)?.userId ===
-                  participants[0]?.userId;
 
   return (
     <div className="card card-wide">

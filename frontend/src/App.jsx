@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react';
-import { io } from 'socket.io-client';
 import { nanoid } from 'nanoid';
 import TestScreen from './components/TestScreen';
 import NameInput from './components/NameInput';
@@ -7,9 +6,10 @@ import RoomJoin from './components/RoomJoin';
 import ChatRoom from './components/ChatRoom';
 import './App.css';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'ws://localhost:3001';
+const WS_URL = BACKEND_URL.replace('https://', 'wss://').replace('http://', 'ws://');
 
-// States: TESTING → ANONYMOUS → NAMED → IN_ROOM → (PLAYING)
+// States: TESTING → ANONYMOUS → NAMED → IN_ROOM
 const STATES = {
   TESTING: 'TESTING',
   ANONYMOUS: 'ANONYMOUS',
@@ -20,148 +20,270 @@ const STATES = {
 function App() {
   const [appState, setAppState] = useState(STATES.TESTING);
   const [user, setUser] = useState(null);
-  const [room, setRoom] = useState(null);
+  const [roomCode, setRoomCode] = useState(null);
   const [messages, setMessages] = useState([]);
   const [participants, setParticipants] = useState([]);
-  const [gameState, setGameState] = useState(null);
+  const [pollState, setPollState] = useState(null);
   const [error, setError] = useState(null);
-  const [testReport, setTestReport] = useState(null);
+  const [isHousemaster, setIsHousemaster] = useState(false);
 
-  const socketRef = useRef(null);
+  const wsRef = useRef(null);
+  const sessionIdRef = useRef(null);
 
-  // Initialize socket and local storage - runs ONCE on mount
+  // Initialize session ID
   useEffect(() => {
-    console.log('🔌 Initializing socket connection to:', BACKEND_URL);
+    let sessionId = localStorage.getItem('shoutbox_session_id');
+    if (!sessionId) {
+      sessionId = nanoid();
+      localStorage.setItem('shoutbox_session_id', sessionId);
+    }
+    sessionIdRef.current = sessionId;
+  }, []);
 
-    // Get or create local UUID
-    let localUUID = localStorage.getItem('shoutbox_uuid');
-    if (!localUUID) {
-      localUUID = nanoid();
-      localStorage.setItem('shoutbox_uuid', localUUID);
+  // WebSocket connection
+  useEffect(() => {
+    if (appState === STATES.TESTING || appState === STATES.ANONYMOUS || appState === STATES.NAMED) {
+      return;
     }
 
-    const lastDisplayName = localStorage.getItem('shoutbox_last_name');
+    console.log('🔌 Connecting to Funkhaus WebSocket:', WS_URL);
 
-    // Connect to socket immediately (even during test screen)
-    socketRef.current = io(BACKEND_URL, {
-      reconnection: true,
-      reconnectionDelay: 1000,
-      reconnectionAttempts: 5
-    });
+    const ws = new WebSocket(WS_URL);
+    wsRef.current = ws;
 
-    socketRef.current.on('connect', () => {
-      console.log('✅ Connected to server, socket ID:', socketRef.current.id);
+    ws.onopen = () => {
+      console.log('✅ WebSocket connected');
       setError(null);
-    });
 
-    socketRef.current.on('disconnect', () => {
-      console.log('❌ Disconnected from server');
-    });
-
-    socketRef.current.on('error', (err) => {
-      console.error('Socket error:', err);
-      setError(err.message);
-      setTimeout(() => setError(null), 5000);
-    });
-
-    socketRef.current.on('session_created', ({ sessionToken, userId }) => {
-      console.log('✅ Session created:', { sessionToken, userId });
-      setUser(prev => ({ ...prev, sessionToken, userId }));
-      setAppState(STATES.NAMED);
-    });
-
-    socketRef.current.on('room_joined', ({ roomCode, roomState }) => {
-      setRoom(roomCode);
-      setMessages(roomState.messages || []);
-      setParticipants(roomState.participants || []);
-      setGameState(roomState.gameState);
-      setAppState(STATES.IN_ROOM);
-    });
-
-    socketRef.current.on('room_state', ({ participants, messages, gameState }) => {
-      setMessages(messages || []);
-      setParticipants(participants || []);
-      setGameState(gameState);
-    });
-
-    socketRef.current.on('new_message', ({ message }) => {
-      setMessages(prev => [...prev, message]);
-    });
-
-    socketRef.current.on('participant_update', ({ participants }) => {
-      setParticipants(participants);
-    });
-
-    socketRef.current.on('game_update', ({ gameState }) => {
-      setGameState(gameState);
-    });
-
-    // Auto-restore session if available
-    if (lastDisplayName) {
-      setUser({ localUUID, displayName: lastDisplayName });
-    }
-
-    return () => {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
+      // Join house
+      if (roomCode && user) {
+        const joinMessage = {
+          type: 'join',
+          data: {
+            houseCode: roomCode,
+            roomName: user.displayName,
+            sessionId: sessionIdRef.current
+          }
+        };
+        console.log('📤 Sending join:', joinMessage);
+        ws.send(JSON.stringify(joinMessage));
       }
     };
-  }, []); // Run only once on mount
+
+    ws.onmessage = (event) => {
+      try {
+        const message = JSON.parse(event.data);
+        console.log('📥 Received:', message);
+        handleMessage(message);
+      } catch (error) {
+        console.error('Error parsing message:', error);
+      }
+    };
+
+    ws.onerror = (error) => {
+      console.error('❌ WebSocket error:', error);
+      setError('Connection error. Please refresh.');
+    };
+
+    ws.onclose = () => {
+      console.log('🔌 WebSocket disconnected');
+    };
+
+    return () => {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.close();
+      }
+    };
+  }, [appState, roomCode, user]);
+
+  const handleMessage = (message) => {
+    const { type, data } = message;
+
+    switch (type) {
+      case 'joined':
+        setIsHousemaster(data.isHousemaster);
+        setParticipants(data.rooms || []);
+        break;
+
+      case 'rooms':
+        setParticipants(data || []);
+        break;
+
+      case 'chat':
+        const chatMsg = {
+          id: nanoid(),
+          type: 'chat',
+          timestamp: data.timestamp,
+          sender: data.senderId,
+          payload: {
+            text: data.text,
+            displayName: data.sender
+          }
+        };
+        setMessages(prev => [...prev, chatMsg]);
+        break;
+
+      case 'pollStarted':
+        setPollState({
+          active: true,
+          question: data.question,
+          options: data.options.map(opt => ({ text: opt, votes: [] })),
+          endAt: data.endAt
+        });
+
+        const pollStartMsg = {
+          id: nanoid(),
+          type: 'game-event',
+          timestamp: Date.now(),
+          sender: null,
+          payload: {
+            gameType: 'poll',
+            action: 'question',
+            data: {
+              question: data.question,
+              options: data.options
+            }
+          }
+        };
+        setMessages(prev => [...prev, pollStartMsg]);
+        break;
+
+      case 'pollUpdate':
+        setPollState(prev => ({
+          ...prev,
+          options: data.options
+        }));
+        break;
+
+      case 'pollEnded':
+        setPollState({ active: false });
+
+        const pollEndMsg = {
+          id: nanoid(),
+          type: 'game-event',
+          timestamp: Date.now(),
+          sender: null,
+          payload: {
+            gameType: 'poll',
+            action: 'result',
+            data: {
+              question: data.question,
+              results: data.results
+            }
+          }
+        };
+        setMessages(prev => [...prev, pollEndMsg]);
+        break;
+
+      case 'system':
+        const systemMsg = {
+          id: nanoid(),
+          type: 'system',
+          timestamp: Date.now(),
+          sender: null,
+          payload: {
+            event: 'system_message',
+            metadata: { message: data.message }
+          }
+        };
+        setMessages(prev => [...prev, systemMsg]);
+        break;
+
+      case 'error':
+        setError(data.message);
+        setTimeout(() => setError(null), 5000);
+        break;
+    }
+  };
 
   const handleSetName = (displayName) => {
-    const localUUID = localStorage.getItem('shoutbox_uuid');
-
-    if (!socketRef.current) {
-      console.error('❌ Socket not initialized!');
-      setError('Connection error. Please refresh the page.');
-      return;
-    }
-
-    if (!socketRef.current.connected) {
-      console.error('❌ Socket not connected! Current state:', socketRef.current.connected);
-      setError('Not connected to server. Please wait and try again.');
-      return;
-    }
-
-    console.log('📤 Sending set_name:', { displayName, localUUID });
-    socketRef.current.emit('set_name', { displayName, localUUID });
-    setUser({ localUUID, displayName });
+    setUser({ displayName });
     localStorage.setItem('shoutbox_last_name', displayName);
+    setAppState(STATES.NAMED);
   };
 
   const handleCreateRoom = () => {
-    socketRef.current.emit('create_room');
+    // Generate 6-character room code
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let code = '';
+    for (let i = 0; i < 6; i++) {
+      code += chars[Math.floor(Math.random() * chars.length)];
+    }
+    setRoomCode(code);
+    setAppState(STATES.IN_ROOM);
   };
 
-  const handleJoinRoom = (roomCode) => {
-    socketRef.current.emit('join_room', { roomCode });
+  const handleJoinRoom = (code) => {
+    setRoomCode(code.toUpperCase());
+    setAppState(STATES.IN_ROOM);
   };
 
   const handleLeaveRoom = () => {
-    socketRef.current.emit('leave_room');
-    setRoom(null);
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.close();
+    }
+    setRoomCode(null);
     setMessages([]);
     setParticipants([]);
-    setGameState(null);
+    setPollState(null);
+    setIsHousemaster(false);
     setAppState(STATES.NAMED);
   };
 
   const handleSendMessage = (text) => {
-    socketRef.current.emit('send_message', { text });
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+      setError('Not connected. Please refresh.');
+      return;
+    }
+
+    const chatMessage = {
+      type: 'chat',
+      data: {
+        sessionId: sessionIdRef.current,
+        text,
+        target: 'ALL'
+      }
+    };
+
+    console.log('📤 Sending chat:', chatMessage);
+    wsRef.current.send(JSON.stringify(chatMessage));
   };
 
   const handleStartPoll = (question, options) => {
-    socketRef.current.emit('start_game', {
-      gameType: 'poll',
-      gameData: { question, options }
-    });
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+      setError('Not connected. Please refresh.');
+      return;
+    }
+
+    const pollMessage = {
+      type: 'startPoll',
+      data: {
+        sessionId: sessionIdRef.current,
+        question,
+        options
+      }
+    };
+
+    console.log('📤 Starting poll:', pollMessage);
+    wsRef.current.send(JSON.stringify(pollMessage));
   };
 
   const handleVote = (optionIndex) => {
-    socketRef.current.emit('game_action', {
-      action: 'vote',
-      data: { optionIndex }
-    });
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+      setError('Not connected. Please refresh.');
+      return;
+    }
+
+    const voteMessage = {
+      type: 'vote',
+      data: {
+        sessionId: sessionIdRef.current,
+        optionIndex
+      }
+    };
+
+    console.log('📤 Voting:', voteMessage);
+    wsRef.current.send(JSON.stringify(voteMessage));
   };
 
   const handleTestsPass = () => {
@@ -169,7 +291,7 @@ function App() {
   };
 
   const handleTestsFail = (report) => {
-    setTestReport(report);
+    console.error('Tests failed:', report);
   };
 
   return (
@@ -202,11 +324,16 @@ function App() {
 
       {appState === STATES.IN_ROOM && (
         <ChatRoom
-          roomCode={room}
+          roomCode={roomCode}
           messages={messages}
-          participants={participants}
-          gameState={gameState}
-          currentUser={user}
+          participants={participants.map(p => ({
+            userId: p.id,
+            displayName: p.name,
+            isOnline: true
+          }))}
+          gameState={pollState}
+          currentUser={{ userId: sessionIdRef.current, ...user }}
+          isOwner={isHousemaster}
           onLeaveRoom={handleLeaveRoom}
           onSendMessage={handleSendMessage}
           onStartPoll={handleStartPoll}
