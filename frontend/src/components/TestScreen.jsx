@@ -30,10 +30,10 @@ function TestScreen({ backendUrl, onTestsPass, onTestsFail }) {
     updateTest('backendUrl', 'passed', `Using: ${backendUrl}`);
 
     // Test 2: Health Check
-    updateTest('health', 'running', 'Testing /health endpoint...');
+    updateTest('health', 'running', 'Testing backend endpoint...');
 
     try {
-      const response = await fetch(`${backendUrl}/health`, {
+      const response = await fetch(`${backendUrl}/`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -44,15 +44,15 @@ function TestScreen({ backendUrl, onTestsPass, onTestsFail }) {
 
       const data = await response.json();
 
-      if (data.status === 'ok') {
-        updateTest('health', 'passed', `Backend online (${data.timestamp})`);
+      if (data.status === 'ok' || data.service) {
+        updateTest('health', 'passed', `Backend online (${data.service || 'Funkhaus'})`);
       } else {
         throw new Error(`Unexpected response: ${JSON.stringify(data)}`);
       }
     } catch (error) {
       updateTest('health', 'failed',
         'Backend not reachable!',
-        `URL: ${backendUrl}/health\nError: ${error.message}\n\nPossible causes:\n1. Backend not deployed on Render\n2. Backend crashed (check Render logs)\n3. Wrong URL in VITE_BACKEND_URL`
+        `URL: ${backendUrl}/\nError: ${error.message}\n\nPossible causes:\n1. Backend not deployed on Render\n2. Backend crashed (check Render logs)\n3. Wrong URL in VITE_BACKEND_URL`
       );
       generateErrorReport();
       return;
