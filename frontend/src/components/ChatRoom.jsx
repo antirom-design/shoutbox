@@ -43,8 +43,11 @@ function ChatRoom({
           <h2>Room: {roomCode}</h2>
           <div className="participants-bar">
             {participants.filter(p => p.isOnline).map(p => (
-              <span key={p.userId} className="participant-badge">
-                {p.isHousemaster && '👑 '}{p.displayName}
+              <span
+                key={p.userId}
+                className={`participant-badge ${p.isHousemaster ? 'participant-housemaster' : ''}`}
+              >
+                {p.displayName}
               </span>
             ))}
           </div>

@@ -28,6 +28,13 @@
   font-weight: 500;
 }
 
+.participant-housemaster {
+  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+  color: #333;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+}
+
 .btn-share {
   background: #667eea;
   color: white;
