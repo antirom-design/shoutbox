@@ -12,7 +12,9 @@ function ChatRoom({
   onLeaveRoom,
   onSendMessage,
   onStartPoll,
-  onVote
+  onVote,
+  onEndPoll,
+  onCancelPoll
 }) {
   const [messageText, setMessageText] = useState('');
   const [showPollForm, setShowPollForm] = useState(false);
@@ -69,7 +71,10 @@ function ChatRoom({
             message={msg}
             currentUserId={currentUser?.userId}
             gameState={gameState}
+            isOwner={isOwner}
             onVote={onVote}
+            onEndPoll={onEndPoll}
+            onCancelPoll={onCancelPoll}
           />
         ))}
         <div ref={messagesEndRef} />
@@ -119,11 +124,11 @@ function ChatRoom({
   );
 }
 
-function MessageItem({ message, currentUserId, gameState, onVote }) {
+function MessageItem({ message, currentUserId, gameState, isOwner, onVote, onEndPoll, onCancelPoll }) {
   const { type, payload, sender } = message;
   const [countdown, setCountdown] = useState(0);
 
-  // Countdown timer for active polls
+  // Countdown timer for active polls (only if endAt is set)
   useEffect(() => {
     if (type === 'game-event' && payload.gameType === 'poll' && payload.action === 'question' && gameState?.active && gameState?.endAt) {
       const interval = setInterval(() => {
@@ -135,6 +140,9 @@ function MessageItem({ message, currentUserId, gameState, onVote }) {
       }, 100);
 
       return () => clearInterval(interval);
+    } else if (type === 'game-event' && payload.gameType === 'poll' && payload.action === 'question' && gameState?.active && !gameState?.endAt) {
+      // No time limit - set countdown to -1 to indicate unlimited
+      setCountdown(-1);
     }
   }, [type, payload, gameState?.active, gameState?.endAt]);
 
@@ -168,6 +176,7 @@ function MessageItem({ message, currentUserId, gameState, onVote }) {
       const isActive = gameState?.active;
       const showRealtime = gameState?.showRealtime || false;
       const userVote = gameState?.userVote;
+      const hasTimeLimit = countdown >= 0;
 
       // Timer color based on remaining time
       const timerClass = countdown > 5 ? 'timer-green' : countdown > 2 ? 'timer-orange' : 'timer-red';
@@ -177,7 +186,7 @@ function MessageItem({ message, currentUserId, gameState, onVote }) {
           <div className="poll-question">
             <div className="poll-header">
               <h3>{payload.data.question}</h3>
-              {isActive && (
+              {isActive && hasTimeLimit && (
                 <div className={`poll-timer ${timerClass}`}>
                   ⏱️ {countdown}s
                 </div>
@@ -215,6 +224,23 @@ function MessageItem({ message, currentUserId, gameState, onVote }) {
                 );
               })}
             </div>
+
+            {isOwner && isActive && (
+              <div className="poll-controls">
+                <button
+                  className="btn-poll-control btn-end-poll"
+                  onClick={() => onEndPoll()}
+                >
+                  End Poll
+                </button>
+                <button
+                  className="btn-poll-control btn-cancel-poll"
+                  onClick={() => onCancelPoll()}
+                >
+                  Cancel Poll
+                </button>
+              </div>
+            )}
           </div>
         </div>
       );
@@ -253,6 +279,7 @@ function PollForm({ onSubmit, onCancel }) {
   const [question, setQuestion] = useState('');
   const [options, setOptions] = useState(['', '']);
   const [showRealtime, setShowRealtime] = useState(false);
+  const [hasTimeLimit, setHasTimeLimit] = useState(true);
   const [duration, setDuration] = useState(10);
 
   const handleSubmit = (e) => {
@@ -261,7 +288,10 @@ function PollForm({ onSubmit, onCancel }) {
     const validOptions = options.filter(opt => opt.trim());
 
     if (question.trim() && validOptions.length >= 2) {
-      onSubmit(question, validOptions, { showRealtime, duration });
+      onSubmit(question, validOptions, {
+        showRealtime,
+        duration: hasTimeLimit ? duration : null
+      });
     }
   };
 
@@ -271,75 +301,112 @@ function PollForm({ onSubmit, onCancel }) {
     }
   };
 
+  const removeOption = (idx) => {
+    if (options.length > 2) {
+      setOptions(options.filter((_, i) => i !== idx));
+    }
+  };
+
   return (
     <div className="modal-overlay" onClick={onCancel}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
+      <div className="modal poll-form-modal" onClick={(e) => e.stopPropagation()}>
         <h2>Create Poll</h2>
 
         <form onSubmit={handleSubmit}>
-          <div className="input-group">
-            <label>Question</label>
+          <div className="form-section">
+            <label className="form-label">Question</label>
             <input
               type="text"
+              className="form-input"
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
               placeholder="What's your favorite color?"
               autoFocus
+              maxLength={200}
             />
           </div>
 
-          <div className="input-group">
-            <label>Options</label>
-            {options.map((opt, idx) => (
-              <input
-                key={idx}
-                type="text"
-                value={opt}
-                onChange={(e) => {
-                  const newOptions = [...options];
-                  newOptions[idx] = e.target.value;
-                  setOptions(newOptions);
-                }}
-                placeholder={`Option ${idx + 1}`}
-                style={{ marginBottom: '8px' }}
-              />
-            ))}
+          <div className="form-section">
+            <label className="form-label">Options</label>
+            <div className="poll-options-input">
+              {options.map((opt, idx) => (
+                <div key={idx} className="poll-option-input-row">
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={opt}
+                    onChange={(e) => {
+                      const newOptions = [...options];
+                      newOptions[idx] = e.target.value;
+                      setOptions(newOptions);
+                    }}
+                    placeholder={`Option ${idx + 1}`}
+                    maxLength={100}
+                  />
+                  {options.length > 2 && (
+                    <button
+                      type="button"
+                      className="btn-remove-option"
+                      onClick={() => removeOption(idx)}
+                      title="Remove option"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+            {options.length < 4 && (
+              <button type="button" className="btn-add-option" onClick={addOption}>
+                + Add Option
+              </button>
+            )}
           </div>
 
-          {options.length < 4 && (
-            <button type="button" className="btn btn-secondary" onClick={addOption}>
-              Add Option
-            </button>
-          )}
+          <div className="form-section poll-settings">
+            <label className="form-label">Settings</label>
 
-          <div className="input-group" style={{ marginTop: '16px' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+            <label className="checkbox-label">
               <input
                 type="checkbox"
                 checked={showRealtime}
                 onChange={(e) => setShowRealtime(e.target.checked)}
               />
-              Show results in real-time
+              <span>Show results in real-time</span>
             </label>
+
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={hasTimeLimit}
+                onChange={(e) => setHasTimeLimit(e.target.checked)}
+              />
+              <span>Set time limit</span>
+            </label>
+
+            {hasTimeLimit && (
+              <div className="time-limit-input">
+                <label className="form-sublabel">Voting time</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <input
+                    type="number"
+                    className="form-input-small"
+                    value={duration}
+                    onChange={(e) => setDuration(Math.max(5, Math.min(120, parseInt(e.target.value) || 10)))}
+                    min="5"
+                    max="120"
+                  />
+                  <span className="form-unit">seconds</span>
+                </div>
+              </div>
+            )}
           </div>
 
-          <div className="input-group">
-            <label>⏱️ Voting time (seconds)</label>
-            <input
-              type="number"
-              value={duration}
-              onChange={(e) => setDuration(Math.max(5, Math.min(120, parseInt(e.target.value) || 10)))}
-              min="5"
-              max="120"
-              style={{ width: '100px' }}
-            />
-          </div>
-
-          <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
-            <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>
+          <div className="form-actions">
+            <button type="submit" className="btn btn-primary">
               Start Poll
             </button>
-            <button type="button" className="btn btn-secondary" onClick={onCancel} style={{ flex: 1 }}>
+            <button type="button" className="btn btn-secondary" onClick={onCancel}>
               Cancel
             </button>
           </div>

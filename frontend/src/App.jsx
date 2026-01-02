@@ -206,6 +206,15 @@ function App() {
         setMessages(prev => [...prev, pollEndMsg]);
         break;
 
+      case 'pollCanceled':
+        // Remove poll from state
+        setPollState(null);
+        // Remove poll message from messages
+        setMessages(prev => prev.filter(msg =>
+          !(msg.type === 'game-event' && msg.payload.gameType === 'poll' && msg.payload.action === 'question')
+        ));
+        break;
+
       case 'system':
         const systemMsg = {
           id: nanoid(),
@@ -333,6 +342,43 @@ function App() {
     wsRef.current.send(JSON.stringify(voteMessage));
   };
 
+  const handleEndPoll = () => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+      setError('Not connected. Please refresh.');
+      return;
+    }
+
+    const endPollMessage = {
+      type: 'endPoll',
+      data: {
+        sessionId: sessionIdRef.current
+      }
+    };
+
+    console.log('📤 Ending poll:', endPollMessage);
+    wsRef.current.send(JSON.stringify(endPollMessage));
+  };
+
+  const handleCancelPoll = () => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+      setError('Not connected. Please refresh.');
+      return;
+    }
+
+    const cancelPollMessage = {
+      type: 'cancelPoll',
+      data: {
+        sessionId: sessionIdRef.current
+      }
+    };
+
+    console.log('📤 Canceling poll:', cancelPollMessage);
+    wsRef.current.send(JSON.stringify(cancelPollMessage));
+
+    // Optimistically remove poll from local state
+    setPollState(null);
+  };
+
   const handleTestsPass = () => {
     setAppState(STATES.ANONYMOUS);
   };
@@ -386,6 +432,8 @@ function App() {
           onSendMessage={handleSendMessage}
           onStartPoll={handleStartPoll}
           onVote={handleVote}
+          onEndPoll={handleEndPoll}
+          onCancelPoll={handleCancelPoll}
         />
       )}
     </div>
