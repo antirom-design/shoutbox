@@ -1,8 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 function NameInput({ onSubmit }) {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
+
+  // Prefill with last used name
+  useEffect(() => {
+    const lastUsedName = localStorage.getItem('shoutbox_last_name');
+    if (lastUsedName) {
+      setName(lastUsedName);
+    }
+  }, []);
 
   const handleSubmit = (e) => {
     e.preventDefault();
