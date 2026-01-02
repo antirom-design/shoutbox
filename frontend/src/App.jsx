@@ -35,14 +35,15 @@ function App() {
   const wsRef = useRef(null);
   const sessionIdRef = useRef(null);
 
-  // Initialize session ID
+  // Initialize session ID - use sessionStorage for per-tab uniqueness
   useEffect(() => {
-    let sessionId = localStorage.getItem('shoutbox_session_id');
+    let sessionId = sessionStorage.getItem('shoutbox_session_id');
     if (!sessionId) {
       sessionId = nanoid();
-      localStorage.setItem('shoutbox_session_id', sessionId);
+      sessionStorage.setItem('shoutbox_session_id', sessionId);
     }
     sessionIdRef.current = sessionId;
+    console.log('🆔 Session ID:', sessionId);
   }, []);
 
   // WebSocket connection
