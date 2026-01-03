@@ -636,7 +636,7 @@
 /* Mobile Optimizations */
 @media (max-width: 768px) {
   .chat-header {
-    padding: 12px;
+    padding: 12px 14px;
   }
 
   .header-top {
@@ -666,7 +666,7 @@
   }
 
   .messages-container {
-    padding: 12px;
+    padding: 12px 14px;
     gap: 10px;
   }
 
@@ -685,8 +685,8 @@
   }
 
   .chat-footer {
-    padding: 10px;
-    gap: 6px;
+    padding: 12px 14px;
+    gap: 8px;
   }
 
   .message-form {
