@@ -47,26 +47,26 @@ function ChatRoom({
   return (
     <div className="card card-wide">
       <div className="chat-header">
-        <div>
+        <div className="header-top">
           <h2>Room: {roomCode}</h2>
-          <div className="participants-bar">
-            {participants.filter(p => p.isOnline).map(p => (
-              <span
-                key={p.userId}
-                className={`participant-badge ${p.isHousemaster ? 'participant-housemaster' : ''} ${p.isTyping ? 'participant-typing' : ''}`}
-              >
-                {p.displayName}
-              </span>
-            ))}
+          <div className="header-actions">
+            <a className="header-link" onClick={onLeaveRoom}>
+              <span className="link-icon">←</span> Leave
+            </a>
+            <a className="header-link" onClick={() => setShowShareModal(true)}>
+              <span className="link-icon">🔗</span> Share
+            </a>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button className="btn-share" onClick={() => setShowShareModal(true)}>
-            🔗 Share
-          </button>
-          <button className="btn-leave" onClick={onLeaveRoom}>
-            Leave
-          </button>
+        <div className="participants-bar">
+          {participants.filter(p => p.isOnline).map(p => (
+            <span
+              key={p.userId}
+              className={`participant-badge ${p.isHousemaster ? 'participant-housemaster' : ''} ${p.isTyping ? 'participant-typing' : ''}`}
+            >
+              {p.displayName}
+            </span>
+          ))}
         </div>
       </div>
 
