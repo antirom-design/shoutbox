@@ -6,7 +6,7 @@ import RoomJoin from './components/RoomJoin';
 import ChatRoom from './components/ChatRoom';
 import './App.css';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://funkhaus-websocket.onrender.com';
 const WS_URL = BACKEND_URL.replace('https://', 'wss://').replace('http://', 'ws://');
 
 // Debug: Log what we're using
