@@ -311,7 +311,9 @@ function App() {
               data: {
                 results: data.results,
                 gridSize: data.gridSize,
-                timeLimit: data.timeLimit
+                timeLimit: data.timeLimit,
+                round: data.round,
+                totalRounds: data.totalRounds
               }
             }
           };
@@ -334,6 +336,41 @@ function App() {
               isWinner: false
             })));
           }, 10000);
+        }
+        break;
+
+      case 'circleSortGameEnded':
+        // Final game over - show overall leaderboard
+        const finalMsg = {
+          id: nanoid(),
+          type: 'game-event',
+          timestamp: Date.now(),
+          sender: null,
+          payload: {
+            gameType: 'circle-sort',
+            action: 'final',
+            data: {
+              results: data.results,
+              totalRounds: data.totalRounds
+            }
+          }
+        };
+        setMessages(prev => [...prev, finalMsg]);
+
+        // Champion badge
+        if (data.results && data.results.length > 0) {
+          const winnerId = data.results[0].userId;
+          setParticipants(prev => prev.map(p => ({
+            ...p,
+            isWinner: p.id === winnerId
+          })));
+
+          setTimeout(() => {
+            setParticipants(prev => prev.map(p => ({
+              ...p,
+              isWinner: false
+            })));
+          }, 15000);
         }
         break;
 

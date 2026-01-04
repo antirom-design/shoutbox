@@ -28,7 +28,7 @@ function CircleSortGame({
   isActive,
   onSubmitResult
 }) {
-  const { gridSize, timeLimit, colorPalette, initialGrid, startTime } = gameData;
+  const { gridSize, timeLimit, colorPalette, initialGrid, startTime, currentRound, totalRounds } = gameData;
 
   const [grid, setGrid] = useState(initialGrid);
   const [clicks, setClicks] = useState(0);
@@ -133,11 +133,14 @@ function CircleSortGame({
   return (
     <div className="circle-sort-game">
       <div className="game-header">
+        <div className="game-round">
+          {currentRound}/{totalRounds}
+        </div>
         <div className={`game-timer ${getTimerClass()}`}>
-          ⏱️ {formatTime(timeLeft)}
+          {formatTime(timeLeft)}
         </div>
         <div className="game-stats">
-          Clicks: {clicks}
+          {clicks}
         </div>
       </div>
 
@@ -163,10 +166,10 @@ function CircleSortGame({
       <div className="game-progress">
         {hasSubmitted ? (
           <span className="game-complete">
-            {matchCount === gridSize * gridSize ? '✅ Complete!' : '⏱️ Time\'s up!'}
+            {matchCount === gridSize * gridSize ? 'Complete' : 'Time up'}
           </span>
         ) : (
-          <span>{matchCount}/{gridSize * gridSize} circles match</span>
+          <span>{matchCount}/{gridSize * gridSize}</span>
         )}
       </div>
     </div>
@@ -177,78 +180,101 @@ function CircleSortGame({
 function CircleSortForm({ onSubmit, onCancel }) {
   const [gridSize, setGridSize] = useState(4);
   const [timeLimit, setTimeLimit] = useState(120);
+  const [rounds, setRounds] = useState(1);
+  const [colorCount, setColorCount] = useState(3);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit({ gridSize, timeLimit });
+    onSubmit({ gridSize, timeLimit, rounds, colorCount });
   };
 
   return (
     <div className="modal-overlay" onClick={onCancel}>
       <div className="modal circle-sort-form" onClick={(e) => e.stopPropagation()}>
-        <h2>Start Circle Sorting Game</h2>
+        <h2>Circle Sort</h2>
 
         <form onSubmit={handleSubmit}>
           <div className="form-section">
-            <label className="form-label">Grid Size</label>
-            <div className="grid-size-options">
+            <label className="form-label">Grid</label>
+            <div className="button-group">
               {[3, 4, 5].map(size => (
-                <label key={size} className="radio-option">
-                  <input
-                    type="radio"
-                    name="gridSize"
-                    value={size}
-                    checked={gridSize === size}
-                    onChange={(e) => setGridSize(parseInt(e.target.value))}
-                  />
-                  <span>{size}x{size} ({size * size} circles)</span>
-                </label>
+                <button
+                  key={size}
+                  type="button"
+                  className={`option-btn ${gridSize === size ? 'active' : ''}`}
+                  onClick={() => setGridSize(size)}
+                >
+                  {size}×{size}
+                </button>
               ))}
             </div>
           </div>
 
           <div className="form-section">
-            <label className="form-label">Time Limit</label>
-            <div className="time-limit-options">
-              <label className="radio-option">
-                <input
-                  type="radio"
-                  name="timeLimit"
-                  value="60"
-                  checked={timeLimit === 60}
-                  onChange={(e) => setTimeLimit(parseInt(e.target.value))}
-                />
-                <span>1 minute (Quick)</span>
-              </label>
-              <label className="radio-option">
-                <input
-                  type="radio"
-                  name="timeLimit"
-                  value="120"
-                  checked={timeLimit === 120}
-                  onChange={(e) => setTimeLimit(parseInt(e.target.value))}
-                />
-                <span>2 minutes (Normal)</span>
-              </label>
-              <label className="radio-option">
-                <input
-                  type="radio"
-                  name="timeLimit"
-                  value="180"
-                  checked={timeLimit === 180}
-                  onChange={(e) => setTimeLimit(parseInt(e.target.value))}
-                />
-                <span>3 minutes (Relaxed)</span>
-              </label>
+            <label className="form-label">Time</label>
+            <div className="button-group">
+              <button
+                type="button"
+                className={`option-btn ${timeLimit === 60 ? 'active' : ''}`}
+                onClick={() => setTimeLimit(60)}
+              >
+                60s
+              </button>
+              <button
+                type="button"
+                className={`option-btn ${timeLimit === 120 ? 'active' : ''}`}
+                onClick={() => setTimeLimit(120)}
+              >
+                120s
+              </button>
+              <button
+                type="button"
+                className={`option-btn ${timeLimit === 180 ? 'active' : ''}`}
+                onClick={() => setTimeLimit(180)}
+              >
+                180s
+              </button>
+            </div>
+          </div>
+
+          <div className="form-section">
+            <label className="form-label">Rounds</label>
+            <div className="button-group">
+              {[1, 2, 3, 4, 5].map(r => (
+                <button
+                  key={r}
+                  type="button"
+                  className={`option-btn ${rounds === r ? 'active' : ''}`}
+                  onClick={() => setRounds(r)}
+                >
+                  {r}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="form-section">
+            <label className="form-label">Colors</label>
+            <div className="button-group">
+              {[2, 3, 4, 5].map(c => (
+                <button
+                  key={c}
+                  type="button"
+                  className={`option-btn ${colorCount === c ? 'active' : ''}`}
+                  onClick={() => setColorCount(c)}
+                >
+                  {c}
+                </button>
+              ))}
             </div>
           </div>
 
           <div className="form-actions">
-            <button type="submit" className="btn btn-primary">
-              Start Game
-            </button>
-            <button type="button" className="btn btn-secondary" onClick={onCancel}>
+            <button type="button" className="btn-text" onClick={onCancel}>
               Cancel
+            </button>
+            <button type="submit" className="btn-primary">
+              Start
             </button>
           </div>
         </form>

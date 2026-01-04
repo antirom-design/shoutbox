@@ -332,15 +332,15 @@ function MessageItem({ message, currentUserId, gameState, circleGameState, isOwn
     }
 
     if (payload.gameType === 'circle-sort' && payload.action === 'result') {
-      const { results, gridSize, timeLimit } = payload.data;
+      const { results, gridSize, timeLimit, round, totalRounds } = payload.data;
 
       return (
         <div className="game-event">
           <div className="circle-sort-result">
-            <h3>🎯 Circle Sorting Results</h3>
+            <h3>Results {round ? `— Round ${round}/${totalRounds}` : ''}</h3>
             <div className="game-info">
-              <span>Grid: {gridSize}x{gridSize}</span>
-              <span>Time Limit: {timeLimit}s</span>
+              <span>{gridSize}×{gridSize}</span>
+              <span>{timeLimit}s</span>
             </div>
             <div className="leaderboard">
               {results.slice(0, 3).map((result, idx) => {
@@ -351,8 +351,34 @@ function MessageItem({ message, currentUserId, gameState, circleGameState, isOwn
                     <span className="player-name">{result.userName}</span>
                     <div className="player-stats">
                       <span>{result.completionTime}s</span>
-                      <span>{result.clicks} clicks</span>
-                      <span className="score">{result.score} pts</span>
+                      <span>{result.clicks}</span>
+                      <span className="score">{result.score}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (payload.gameType === 'circle-sort' && payload.action === 'final') {
+      const { results, totalRounds } = payload.data;
+
+      return (
+        <div className="game-event">
+          <div className="circle-sort-result">
+            <h3>Final Results — {totalRounds} {totalRounds === 1 ? 'Round' : 'Rounds'}</h3>
+            <div className="leaderboard">
+              {results.slice(0, 3).map((result, idx) => {
+                const medals = ['🥇', '🥈', '🥉'];
+                return (
+                  <div key={idx} className="leaderboard-item">
+                    <span className="medal">{medals[idx]}</span>
+                    <span className="player-name">{result.userName}</span>
+                    <div className="player-stats">
+                      <span className="score">{result.score} total</span>
                     </div>
                   </div>
                 );
