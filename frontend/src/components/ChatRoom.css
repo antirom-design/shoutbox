@@ -60,6 +60,25 @@
   font-weight: 500;
   border: 2px solid transparent;
   transition: border 0.3s ease, box-shadow 0.3s ease;
+  position: relative;
+}
+
+.participant-badge.participant-winner::before {
+  content: '🏆';
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  font-size: 18px;
+  animation: trophy-pulse 1s ease-in-out infinite;
+}
+
+@keyframes trophy-pulse {
+  0%, 100% {
+    transform: scale(1) rotate(0deg);
+  }
+  50% {
+    transform: scale(1.2) rotate(10deg);
+  }
 }
 
 .participant-housemaster {
@@ -633,6 +652,100 @@
   box-shadow: 0 2px 8px rgba(255, 68, 68, 0.3);
 }
 
+/* Circle Sort Game Styles */
+.btn-start-game {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.btn-start-game:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.circle-sort-result {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  padding: 20px;
+  color: white;
+}
+
+.circle-sort-result h3 {
+  margin: 0 0 12px 0;
+  font-size: 20px;
+  text-align: center;
+}
+
+.game-info {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin-bottom: 16px;
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.leaderboard {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.leaderboard-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.15);
+  padding: 12px 16px;
+  border-radius: 8px;
+  backdrop-filter: blur(10px);
+  transition: all 0.2s ease;
+}
+
+.leaderboard-item:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateX(4px);
+}
+
+.medal {
+  font-size: 28px;
+  flex-shrink: 0;
+}
+
+.player-name {
+  font-weight: 600;
+  font-size: 16px;
+  flex: 1;
+}
+
+.player-stats {
+  display: flex;
+  gap: 12px;
+  font-size: 13px;
+  align-items: center;
+}
+
+.player-stats span {
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.player-stats .score {
+  font-weight: 700;
+  background: rgba(255, 215, 0, 0.3);
+  border: 1px solid rgba(255, 215, 0, 0.5);
+}
+
 /* Mobile Optimizations */
 @media (max-width: 768px) {
   .chat-header {
@@ -712,6 +825,33 @@
     font-size: 14px;
     white-space: nowrap;
     flex-shrink: 0;
+  }
+
+  .btn-start-game {
+    padding: 10px 12px;
+    font-size: 14px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .leaderboard-item {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+
+  .medal {
+    font-size: 24px;
+  }
+
+  .player-name {
+    font-size: 14px;
+  }
+
+  .player-stats {
+    flex-direction: column;
+    gap: 4px;
+    font-size: 12px;
+    align-items: flex-end;
   }
 
   .poll-header {

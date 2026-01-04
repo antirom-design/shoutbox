@@ -29,6 +29,7 @@ function App() {
   const [messages, setMessages] = useState([]);
   const [participants, setParticipants] = useState([]);
   const [pollState, setPollState] = useState(null);
+  const [circleGameState, setCircleGameState] = useState(null);
   const [error, setError] = useState(null);
   const [isHousemaster, setIsHousemaster] = useState(false);
   const [autoJoinRoom, setAutoJoinRoom] = useState(null);
@@ -262,6 +263,80 @@ function App() {
         ));
         break;
 
+      case 'circleSortStarted':
+        setCircleGameState({
+          active: true,
+          gridSize: data.gridSize,
+          timeLimit: data.timeLimit,
+          startTime: data.startTime
+        });
+
+        const gameStartMsg = {
+          id: nanoid(),
+          type: 'game-event',
+          timestamp: Date.now(),
+          sender: null,
+          payload: {
+            gameType: 'circle-sort',
+            action: 'start',
+            data: {
+              gridSize: data.gridSize,
+              timeLimit: data.timeLimit,
+              colorPalette: data.colorPalette,
+              initialGrid: data.initialGrid,
+              startTime: data.startTime
+            }
+          }
+        };
+        setMessages(prev => [...prev, gameStartMsg]);
+        break;
+
+      case 'circleSortEnded':
+        setCircleGameState({ active: false });
+
+        // Remove the active game message and replace with results
+        setMessages(prev => {
+          const withoutGame = prev.filter(msg =>
+            !(msg.type === 'game-event' && msg.payload.gameType === 'circle-sort' && msg.payload.action === 'start')
+          );
+
+          const gameEndMsg = {
+            id: nanoid(),
+            type: 'game-event',
+            timestamp: Date.now(),
+            sender: null,
+            payload: {
+              gameType: 'circle-sort',
+              action: 'result',
+              data: {
+                results: data.results,
+                gridSize: data.gridSize,
+                timeLimit: data.timeLimit
+              }
+            }
+          };
+
+          return [...withoutGame, gameEndMsg];
+        });
+
+        // Add winner badges to top 3 participants
+        if (data.results && data.results.length > 0) {
+          const topUserIds = data.results.slice(0, 3).map(r => r.userId);
+          setParticipants(prev => prev.map(p => ({
+            ...p,
+            isWinner: topUserIds.includes(p.id)
+          })));
+
+          // Remove winner badges after 10 seconds
+          setTimeout(() => {
+            setParticipants(prev => prev.map(p => ({
+              ...p,
+              isWinner: false
+            })));
+          }, 10000);
+        }
+        break;
+
       case 'error':
         setError(data.message);
         setTimeout(() => setError(null), 5000);
@@ -445,6 +520,43 @@ function App() {
     setPollState(null);
   };
 
+  const handleStartGame = (config) => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+      setError('Not connected. Please refresh.');
+      return;
+    }
+
+    const startGameMessage = {
+      type: 'startCircleSort',
+      data: {
+        sessionId: sessionIdRef.current,
+        gridSize: config.gridSize,
+        timeLimit: config.timeLimit
+      }
+    };
+
+    console.log('📤 Starting Circle Sort game:', startGameMessage);
+    wsRef.current.send(JSON.stringify(startGameMessage));
+  };
+
+  const handleSubmitGameResult = (result) => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+      setError('Not connected. Please refresh.');
+      return;
+    }
+
+    const submitResultMessage = {
+      type: 'submitCircleSort',
+      data: {
+        sessionId: sessionIdRef.current,
+        ...result
+      }
+    };
+
+    console.log('📤 Submitting Circle Sort result:', submitResultMessage);
+    wsRef.current.send(JSON.stringify(submitResultMessage));
+  };
+
   const handleTypingStart = () => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
       return;
@@ -538,9 +650,11 @@ function App() {
             displayName: p.name,
             isOnline: true,
             isHousemaster: p.isHousemaster || false,
-            isTyping: p.isTyping || false
+            isTyping: p.isTyping || false,
+            isWinner: p.isWinner || false
           }))}
           gameState={pollState}
+          circleGameState={circleGameState}
           currentUser={{ userId: sessionIdRef.current, ...user }}
           isOwner={isHousemaster}
           onLeaveRoom={handleLeaveRoom}
@@ -550,6 +664,8 @@ function App() {
           onVote={handleVote}
           onEndPoll={handleEndPoll}
           onCancelPoll={handleCancelPoll}
+          onStartGame={handleStartGame}
+          onSubmitGameResult={handleSubmitGameResult}
         />
       )}
     </div>

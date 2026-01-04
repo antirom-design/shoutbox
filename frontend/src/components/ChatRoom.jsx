@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
+import { CircleSortGame, CircleSortForm } from './CircleSort';
 import './ChatRoom.css';
 
 function ChatRoom({
@@ -7,6 +8,7 @@ function ChatRoom({
   messages,
   participants,
   gameState,
+  circleGameState,
   currentUser,
   isOwner = false,
   onLeaveRoom,
@@ -15,10 +17,13 @@ function ChatRoom({
   onStartPoll,
   onVote,
   onEndPoll,
-  onCancelPoll
+  onCancelPoll,
+  onStartGame,
+  onSubmitGameResult
 }) {
   const [messageText, setMessageText] = useState('');
   const [showPollForm, setShowPollForm] = useState(false);
+  const [showGameForm, setShowGameForm] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const messagesEndRef = useRef(null);
 
@@ -62,7 +67,7 @@ function ChatRoom({
           {participants.filter(p => p.isOnline).map(p => (
             <span
               key={p.userId}
-              className={`participant-badge ${p.isHousemaster ? 'participant-housemaster' : ''} ${p.isTyping ? 'participant-typing' : ''}`}
+              className={`participant-badge ${p.isHousemaster ? 'participant-housemaster' : ''} ${p.isTyping ? 'participant-typing' : ''} ${p.isWinner ? 'participant-winner' : ''}`}
             >
               {p.displayName}
             </span>
@@ -77,23 +82,33 @@ function ChatRoom({
             message={msg}
             currentUserId={currentUser?.userId}
             gameState={gameState}
+            circleGameState={circleGameState}
             isOwner={isOwner}
             onVote={onVote}
             onEndPoll={onEndPoll}
             onCancelPoll={onCancelPoll}
+            onSubmitGameResult={onSubmitGameResult}
           />
         ))}
         <div ref={messagesEndRef} />
       </div>
 
       <div className="chat-footer">
-        {isOwner && !gameState?.activeGame && (
-          <button
-            className="btn-start-poll"
-            onClick={() => setShowPollForm(true)}
-          >
-            Start Poll
-          </button>
+        {isOwner && !gameState?.active && !circleGameState?.active && (
+          <>
+            <button
+              className="btn-start-poll"
+              onClick={() => setShowPollForm(true)}
+            >
+              Start Poll
+            </button>
+            <button
+              className="btn-start-game"
+              onClick={() => setShowGameForm(true)}
+            >
+              Start Game
+            </button>
+          </>
         )}
 
         <form onSubmit={handleSendMessage} className="message-form">
@@ -126,6 +141,16 @@ function ChatRoom({
         />
       )}
 
+      {showGameForm && (
+        <CircleSortForm
+          onSubmit={(config) => {
+            onStartGame(config);
+            setShowGameForm(false);
+          }}
+          onCancel={() => setShowGameForm(false)}
+        />
+      )}
+
       {showShareModal && (
         <ShareModal
           roomCode={roomCode}
@@ -136,7 +161,7 @@ function ChatRoom({
   );
 }
 
-function MessageItem({ message, currentUserId, gameState, isOwner, onVote, onEndPoll, onCancelPoll }) {
+function MessageItem({ message, currentUserId, gameState, circleGameState, isOwner, onVote, onEndPoll, onCancelPoll, onSubmitGameResult }) {
   const { type, payload, sender } = message;
   const [countdown, setCountdown] = useState(0);
 
@@ -282,6 +307,53 @@ function MessageItem({ message, currentUserId, gameState, isOwner, onVote, onEnd
                     <div className="poll-result-bar" style={{ width: `${percentage}%` }} />
                     <span className="poll-result-text">{option.text}</span>
                     <span className="poll-result-count">{option.votes.length} ({percentage}%)</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (payload.gameType === 'circle-sort' && payload.action === 'start') {
+      const isActive = circleGameState?.active;
+
+      return (
+        <div className="game-event">
+          <CircleSortGame
+            gameData={payload.data}
+            currentUserId={currentUserId}
+            isActive={isActive}
+            onSubmitResult={onSubmitGameResult}
+          />
+        </div>
+      );
+    }
+
+    if (payload.gameType === 'circle-sort' && payload.action === 'result') {
+      const { results, gridSize, timeLimit } = payload.data;
+
+      return (
+        <div className="game-event">
+          <div className="circle-sort-result">
+            <h3>🎯 Circle Sorting Results</h3>
+            <div className="game-info">
+              <span>Grid: {gridSize}x{gridSize}</span>
+              <span>Time Limit: {timeLimit}s</span>
+            </div>
+            <div className="leaderboard">
+              {results.slice(0, 3).map((result, idx) => {
+                const medals = ['🥇', '🥈', '🥉'];
+                return (
+                  <div key={idx} className="leaderboard-item">
+                    <span className="medal">{medals[idx]}</span>
+                    <span className="player-name">{result.userName}</span>
+                    <div className="player-stats">
+                      <span>{result.completionTime}s</span>
+                      <span>{result.clicks} clicks</span>
+                      <span className="score">{result.score} pts</span>
+                    </div>
                   </div>
                 );
               })}
