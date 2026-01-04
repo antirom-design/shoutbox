@@ -262,14 +262,18 @@
   border-color: #000;
 }
 
-.leaderboard-item:first-child .player-name,
+.leaderboard-item:first-child .player-name {
+  color: #fff;
+}
+
 .leaderboard-item:first-child .player-stats {
   color: #fff;
 }
 
 .leaderboard-item:first-child .player-stats span {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
 }
 
 .leaderboard-item:hover {
@@ -309,6 +313,11 @@
 .player-stats .score {
   font-weight: 500;
   color: #000;
+}
+
+.leaderboard-item:first-child .player-stats .score {
+  color: #fff;
+  font-weight: 600;
 }
 
 /* Mobile Optimizations */
