@@ -284,7 +284,9 @@ function App() {
               timeLimit: data.timeLimit,
               colorPalette: data.colorPalette,
               initialGrid: data.initialGrid,
-              startTime: data.startTime
+              startTime: data.startTime,
+              currentRound: data.currentRound,
+              totalRounds: data.totalRounds
             }
           }
         };
@@ -568,7 +570,9 @@ function App() {
       data: {
         sessionId: sessionIdRef.current,
         gridSize: config.gridSize,
-        timeLimit: config.timeLimit
+        timeLimit: config.timeLimit,
+        rounds: config.rounds,
+        colorCount: config.colorCount
       }
     };
 
