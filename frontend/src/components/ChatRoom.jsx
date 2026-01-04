@@ -24,6 +24,7 @@ function ChatRoom({
   const [messageText, setMessageText] = useState('');
   const [showPollForm, setShowPollForm] = useState(false);
   const [showGameForm, setShowGameForm] = useState(false);
+  const [showGameSelector, setShowGameSelector] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const messagesEndRef = useRef(null);
 
@@ -97,16 +98,22 @@ function ChatRoom({
         {isOwner && !gameState?.active && !circleGameState?.active && (
           <>
             <button
-              className="btn-start-poll"
+              className="btn-start-game-desktop"
               onClick={() => setShowPollForm(true)}
             >
               Start Poll
             </button>
             <button
-              className="btn-start-game"
+              className="btn-start-game-desktop"
               onClick={() => setShowGameForm(true)}
             >
               Start Game
+            </button>
+            <button
+              className="btn-start-game-mobile"
+              onClick={() => setShowGameSelector(true)}
+            >
+              Start
             </button>
           </>
         )}
@@ -148,6 +155,20 @@ function ChatRoom({
             setShowGameForm(false);
           }}
           onCancel={() => setShowGameForm(false)}
+        />
+      )}
+
+      {showGameSelector && (
+        <GameSelector
+          onSelectPoll={() => {
+            setShowGameSelector(false);
+            setShowPollForm(true);
+          }}
+          onSelectCircleSort={() => {
+            setShowGameSelector(false);
+            setShowGameForm(true);
+          }}
+          onCancel={() => setShowGameSelector(false)}
         />
       )}
 
@@ -540,6 +561,49 @@ function PollForm({ onSubmit, onCancel }) {
             </button>
           </div>
         </form>
+      </div>
+    </div>
+  );
+}
+
+function GameSelector({ onSelectPoll, onSelectCircleSort, onCancel }) {
+  return (
+    <div className="modal-overlay" onClick={onCancel}>
+      <div className="modal game-selector-modal" onClick={(e) => e.stopPropagation()}>
+        <h2>Start Game</h2>
+
+        <div className="game-list">
+          <button
+            className="game-list-item"
+            onClick={onSelectPoll}
+          >
+            <div className="game-list-icon">📊</div>
+            <div className="game-list-content">
+              <div className="game-list-title">Poll</div>
+              <div className="game-list-description">Quick voting & feedback</div>
+            </div>
+          </button>
+
+          <button
+            className="game-list-item"
+            onClick={onSelectCircleSort}
+          >
+            <div className="game-list-icon">🎯</div>
+            <div className="game-list-content">
+              <div className="game-list-title">Circle Sort</div>
+              <div className="game-list-description">Match colors puzzle</div>
+            </div>
+          </button>
+        </div>
+
+        <button
+          type="button"
+          className="btn-text"
+          onClick={onCancel}
+          style={{ width: '100%', marginTop: '16px' }}
+        >
+          Cancel
+        </button>
       </div>
     </div>
   );
