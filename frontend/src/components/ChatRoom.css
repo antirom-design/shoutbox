@@ -183,6 +183,12 @@
   margin: 8px 0;
 }
 
+@media (min-width: 769px) {
+  .game-event {
+    max-width: 420px;
+  }
+}
+
 .poll-header {
   display: flex;
   justify-content: space-between;

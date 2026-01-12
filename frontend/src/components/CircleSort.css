@@ -370,21 +370,80 @@
 /* Desktop Optimizations - prevent scrolling */
 @media (min-width: 769px) {
   .circle-sort-game {
-    padding: 18px;
+    padding: 14px;
+    max-width: 380px;
   }
 
   .game-header {
-    margin-bottom: 16px;
-    padding-bottom: 12px;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+  }
+
+  .game-round,
+  .game-timer,
+  .game-stats {
+    font-size: 12px;
+  }
+
+  .game-timer {
+    padding: 3px 8px;
   }
 
   .circle-grid {
-    gap: 8px;
-    margin-bottom: 14px;
+    gap: 7px;
+    margin-bottom: 10px;
   }
 
   .game-progress {
-    margin-top: 8px;
+    margin-top: 6px;
+    font-size: 11px;
+  }
+
+  .circle {
+    border-width: 1.5px;
+  }
+
+  /* Compact leaderboard on desktop */
+  .circle-sort-result {
+    padding: 14px;
+    max-width: 380px;
+  }
+
+  .circle-sort-result h3 {
+    font-size: 13px;
+    margin-bottom: 12px;
+  }
+
+  .game-info {
+    margin-bottom: 14px;
+    font-size: 10px;
+  }
+
+  .leaderboard {
+    gap: 6px;
+  }
+
+  .leaderboard-item {
+    padding: 10px 12px;
+    gap: 10px;
+  }
+
+  .medal {
+    font-size: 16px;
+  }
+
+  .player-name {
+    font-size: 12px;
+  }
+
+  .player-stats {
+    font-size: 10px;
+    gap: 6px;
+  }
+
+  .player-stats span {
+    padding: 3px 6px;
+    font-size: 10px;
   }
 }
 
