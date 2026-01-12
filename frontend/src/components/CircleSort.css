@@ -411,10 +411,41 @@
 /* Desktop Optimizations - overlay gets full size, better shadows */
 @media (min-width: 769px) {
   .circle-sort-overlay .circle-sort-game {
-    max-width: 440px;
+    max-width: 880px;
+    padding: 40px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3),
                 0 10px 30px rgba(0, 0, 0, 0.2),
                 0 0 0 1px rgba(0, 0, 0, 0.05);
+  }
+
+  .circle-sort-overlay .game-header {
+    margin-bottom: 40px;
+    padding-bottom: 24px;
+  }
+
+  .circle-sort-overlay .game-round,
+  .circle-sort-overlay .game-timer,
+  .circle-sort-overlay .game-stats {
+    font-size: 24px;
+  }
+
+  .circle-sort-overlay .game-timer {
+    padding: 8px 20px;
+    border-radius: 8px;
+  }
+
+  .circle-sort-overlay .circle-grid {
+    gap: 20px;
+    margin-bottom: 32px;
+  }
+
+  .circle-sort-overlay .circle {
+    border-width: 3px;
+  }
+
+  .circle-sort-overlay .game-progress {
+    margin-top: 16px;
+    font-size: 20px;
   }
 
   /* Compact leaderboard on desktop */
