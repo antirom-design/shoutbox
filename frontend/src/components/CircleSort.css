@@ -1,5 +1,46 @@
 /* Minimal Circle Sort Game Styles */
 
+/* Desktop Overlay */
+.circle-sort-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 20px;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.circle-sort-overlay-content {
+  animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .circle-sort-game {
   width: 100%;
   max-width: 420px;
@@ -367,83 +408,19 @@
   font-weight: 600;
 }
 
-/* Desktop Optimizations - prevent scrolling */
+/* Desktop Optimizations - overlay gets full size, better shadows */
 @media (min-width: 769px) {
-  .circle-sort-game {
-    padding: 14px;
-    max-width: 380px;
-  }
-
-  .game-header {
-    margin-bottom: 12px;
-    padding-bottom: 10px;
-  }
-
-  .game-round,
-  .game-timer,
-  .game-stats {
-    font-size: 12px;
-  }
-
-  .game-timer {
-    padding: 3px 8px;
-  }
-
-  .circle-grid {
-    gap: 7px;
-    margin-bottom: 10px;
-  }
-
-  .game-progress {
-    margin-top: 6px;
-    font-size: 11px;
-  }
-
-  .circle {
-    border-width: 1.5px;
+  .circle-sort-overlay .circle-sort-game {
+    max-width: 440px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3),
+                0 10px 30px rgba(0, 0, 0, 0.2),
+                0 0 0 1px rgba(0, 0, 0, 0.05);
   }
 
   /* Compact leaderboard on desktop */
   .circle-sort-result {
-    padding: 14px;
-    max-width: 380px;
-  }
-
-  .circle-sort-result h3 {
-    font-size: 13px;
-    margin-bottom: 12px;
-  }
-
-  .game-info {
-    margin-bottom: 14px;
-    font-size: 10px;
-  }
-
-  .leaderboard {
-    gap: 6px;
-  }
-
-  .leaderboard-item {
-    padding: 10px 12px;
-    gap: 10px;
-  }
-
-  .medal {
-    font-size: 16px;
-  }
-
-  .player-name {
-    font-size: 12px;
-  }
-
-  .player-stats {
-    font-size: 10px;
-    gap: 6px;
-  }
-
-  .player-stats span {
-    padding: 3px 6px;
-    font-size: 10px;
+    padding: 16px;
+    max-width: 420px;
   }
 }
 
