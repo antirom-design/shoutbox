@@ -315,8 +315,8 @@ function App() {
                 results: data.results,
                 gridSize: data.gridSize,
                 timeLimit: data.timeLimit,
-                round: tournamentState?.active ? tournamentState.currentRound : data.round,
-                totalRounds: tournamentState?.active ? 3 : data.totalRounds
+                round: data.round,
+                totalRounds: data.totalRounds
               }
             }
           };
@@ -341,9 +341,49 @@ function App() {
           }, 10000);
         }
 
-        // Tournament mode: check if more rounds needed
+        break;
+
+      case 'circleSortGameEnded':
+        // Check if this is part of a tournament
         if (tournamentState?.active && tournamentState.currentRound < 3) {
-          // Show countdown message
+          // Tournament in progress - show round results
+          const roundMsg = {
+            id: nanoid(),
+            type: 'game-event',
+            timestamp: Date.now(),
+            sender: null,
+            payload: {
+              gameType: 'circle-sort',
+              action: 'result',
+              data: {
+                results: data.results,
+                gridSize: tournamentState.currentRound === 1 ? 2 : tournamentState.currentRound === 2 ? 4 : 8,
+                timeLimit: tournamentState.currentRound === 1 ? 10 : tournamentState.currentRound === 2 ? 20 : 30,
+                round: tournamentState.currentRound,
+                totalRounds: 3
+              }
+            }
+          };
+          setMessages(prev => [...prev, roundMsg]);
+
+          // Add winner badges to top 3 participants
+          if (data.results && data.results.length > 0) {
+            const topUserIds = data.results.slice(0, 3).map(r => r.userId);
+            setParticipants(prev => prev.map(p => ({
+              ...p,
+              isWinner: topUserIds.includes(p.id)
+            })));
+
+            // Remove winner badges after 10 seconds
+            setTimeout(() => {
+              setParticipants(prev => prev.map(p => ({
+                ...p,
+                isWinner: false
+              })));
+            }, 10000);
+          }
+
+          // Show countdown and start next round
           setTimeout(() => {
             setMessages(prev => [...prev, {
               id: nanoid(),
@@ -389,45 +429,75 @@ function App() {
               console.log(`📤 Starting tournament round ${nextRound}:`, startGameMessage);
               wsRef.current.send(JSON.stringify(startGameMessage));
             }, 3000);
-          }, 500); // Small delay to ensure results are shown first
+          }, 500);
         } else if (tournamentState?.active && tournamentState.currentRound === 3) {
-          // Tournament complete
+          // Tournament complete - show final results
           setTournamentState(null);
-        }
-        break;
 
-      case 'circleSortGameEnded':
-        // Final game over - show overall leaderboard
-        const finalMsg = {
-          id: nanoid(),
-          type: 'game-event',
-          timestamp: Date.now(),
-          sender: null,
-          payload: {
-            gameType: 'circle-sort',
-            action: 'final',
-            data: {
-              results: data.results,
-              totalRounds: data.totalRounds
+          const finalMsg = {
+            id: nanoid(),
+            type: 'game-event',
+            timestamp: Date.now(),
+            sender: null,
+            payload: {
+              gameType: 'circle-sort',
+              action: 'final',
+              data: {
+                results: data.results,
+                totalRounds: 3
+              }
             }
-          }
-        };
-        setMessages(prev => [...prev, finalMsg]);
+          };
+          setMessages(prev => [...prev, finalMsg]);
 
-        // Champion badge
-        if (data.results && data.results.length > 0) {
-          const winnerId = data.results[0].userId;
-          setParticipants(prev => prev.map(p => ({
-            ...p,
-            isWinner: p.id === winnerId
-          })));
-
-          setTimeout(() => {
+          // Champion badge
+          if (data.results && data.results.length > 0) {
+            const winnerId = data.results[0].userId;
             setParticipants(prev => prev.map(p => ({
               ...p,
-              isWinner: false
+              isWinner: p.id === winnerId
             })));
-          }, 15000);
+
+            setTimeout(() => {
+              setParticipants(prev => prev.map(p => ({
+                ...p,
+                isWinner: false
+              })));
+            }, 15000);
+          }
+        } else {
+          // Regular game over - show final leaderboard
+          const finalMsg = {
+            id: nanoid(),
+            type: 'game-event',
+            timestamp: Date.now(),
+            sender: null,
+            payload: {
+              gameType: 'circle-sort',
+              action: 'final',
+              data: {
+                results: data.results,
+                totalRounds: data.totalRounds
+              }
+            }
+          };
+          setMessages(prev => [...prev, finalMsg]);
+
+          // Champion badge
+          if (data.results && data.results.length > 0) {
+            const winnerId = data.results[0].userId;
+            setParticipants(prev => prev.map(p => ({
+              ...p,
+              isWinner: p.id === winnerId
+            })));
+
+            setTimeout(() => {
+              setParticipants(prev => prev.map(p => ({
+                ...p,
+                isWinner: false
+              })));
+            }, 15000);
+          }
         }
         break;
 
