@@ -178,6 +178,7 @@ function CircleSortGame({
 
 // Configuration Form for Creator
 function CircleSortForm({ onSubmit, onCancel }) {
+  const [mode, setMode] = useState('classic'); // 'classic' or 'tournament'
   const [gridSize, setGridSize] = useState(4);
   const [timeLimit, setTimeLimit] = useState(120);
   const [rounds, setRounds] = useState(1);
@@ -185,7 +186,15 @@ function CircleSortForm({ onSubmit, onCancel }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit({ gridSize, timeLimit, rounds, colorCount });
+    if (mode === 'tournament') {
+      onSubmit({
+        tournament: true,
+        rounds: 3,
+        colorCount: 2
+      });
+    } else {
+      onSubmit({ gridSize, timeLimit, rounds, colorCount });
+    }
   };
 
   return (
@@ -194,6 +203,42 @@ function CircleSortForm({ onSubmit, onCancel }) {
         <h2>Circle Sort</h2>
 
         <form onSubmit={handleSubmit}>
+          <div className="form-section">
+            <label className="form-label">Mode</label>
+            <div className="button-group">
+              <button
+                type="button"
+                className={`option-btn ${mode === 'classic' ? 'active' : ''}`}
+                onClick={() => setMode('classic')}
+              >
+                Classic
+              </button>
+              <button
+                type="button"
+                className={`option-btn ${mode === 'tournament' ? 'active' : ''}`}
+                onClick={() => setMode('tournament')}
+              >
+                Tournament 🏆
+              </button>
+            </div>
+          </div>
+
+          {mode === 'tournament' && (
+            <div className="tournament-info">
+              <p className="tournament-description">
+                <strong>3 Progressive Rounds:</strong>
+              </p>
+              <ul className="tournament-rounds">
+                <li>Round 1: 2×2 grid, 10 sec</li>
+                <li>Round 2: 4×4 grid, 20 sec</li>
+                <li>Round 3: 8×8 grid, 30 sec</li>
+              </ul>
+              <p className="tournament-note">All rounds: 2 colors only</p>
+            </div>
+          )}
+
+          {mode === 'classic' && (
+            <>
           <div className="form-section">
             <label className="form-label">Grid</label>
             <div className="button-group">
@@ -268,6 +313,8 @@ function CircleSortForm({ onSubmit, onCancel }) {
               ))}
             </div>
           </div>
+          </>
+          )}
 
           <div className="form-actions">
             <button type="button" className="btn-text" onClick={onCancel}>

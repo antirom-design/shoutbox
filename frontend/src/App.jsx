@@ -30,6 +30,7 @@ function App() {
   const [participants, setParticipants] = useState([]);
   const [pollState, setPollState] = useState(null);
   const [circleGameState, setCircleGameState] = useState(null);
+  const [tournamentState, setTournamentState] = useState(null); // { active: bool, currentRound: number }
   const [error, setError] = useState(null);
   const [isHousemaster, setIsHousemaster] = useState(false);
   const [autoJoinRoom, setAutoJoinRoom] = useState(null);
@@ -314,8 +315,8 @@ function App() {
                 results: data.results,
                 gridSize: data.gridSize,
                 timeLimit: data.timeLimit,
-                round: data.round,
-                totalRounds: data.totalRounds
+                round: tournamentState?.active ? tournamentState.currentRound : data.round,
+                totalRounds: tournamentState?.active ? 3 : data.totalRounds
               }
             }
           };
@@ -338,6 +339,60 @@ function App() {
               isWinner: false
             })));
           }, 10000);
+        }
+
+        // Tournament mode: check if more rounds needed
+        if (tournamentState?.active && tournamentState.currentRound < 3) {
+          // Show countdown message
+          setTimeout(() => {
+            setMessages(prev => [...prev, {
+              id: nanoid(),
+              type: 'game-event',
+              timestamp: Date.now(),
+              sender: null,
+              payload: {
+                gameType: 'circle-sort',
+                action: 'countdown',
+                data: {
+                  nextRound: tournamentState.currentRound + 1,
+                  countdown: 3
+                }
+              }
+            }]);
+
+            // Start next round after 3 seconds
+            setTimeout(() => {
+              const nextRound = tournamentState.currentRound + 1;
+              setTournamentState({ active: true, currentRound: nextRound });
+
+              // Determine next round settings
+              let gridSize, timeLimit;
+              if (nextRound === 2) {
+                gridSize = 4;
+                timeLimit = 20;
+              } else if (nextRound === 3) {
+                gridSize = 8;
+                timeLimit = 30;
+              }
+
+              const startGameMessage = {
+                type: 'startCircleSort',
+                data: {
+                  sessionId: sessionIdRef.current,
+                  gridSize,
+                  timeLimit,
+                  rounds: 1,
+                  colorCount: 2
+                }
+              };
+
+              console.log(`📤 Starting tournament round ${nextRound}:`, startGameMessage);
+              wsRef.current.send(JSON.stringify(startGameMessage));
+            }, 3000);
+          }, 500); // Small delay to ensure results are shown first
+        } else if (tournamentState?.active && tournamentState.currentRound === 3) {
+          // Tournament complete
+          setTournamentState(null);
         }
         break;
 
@@ -565,19 +620,41 @@ function App() {
       return;
     }
 
-    const startGameMessage = {
-      type: 'startCircleSort',
-      data: {
-        sessionId: sessionIdRef.current,
-        gridSize: config.gridSize,
-        timeLimit: config.timeLimit,
-        rounds: config.rounds,
-        colorCount: config.colorCount
-      }
-    };
+    // Tournament mode: 3 rounds with progressive difficulty
+    if (config.tournament) {
+      // Set tournament state
+      setTournamentState({ active: true, currentRound: 1 });
 
-    console.log('📤 Starting Circle Sort game:', startGameMessage);
-    wsRef.current.send(JSON.stringify(startGameMessage));
+      // Round 1: 2x2, 10 sec
+      const startGameMessage = {
+        type: 'startCircleSort',
+        data: {
+          sessionId: sessionIdRef.current,
+          gridSize: 2,
+          timeLimit: 10,
+          rounds: 1, // Send 1 round at a time for tournament
+          colorCount: 2
+        }
+      };
+
+      console.log('📤 Starting Circle Sort tournament Round 1:', startGameMessage);
+      wsRef.current.send(JSON.stringify(startGameMessage));
+    } else {
+      // Classic mode
+      const startGameMessage = {
+        type: 'startCircleSort',
+        data: {
+          sessionId: sessionIdRef.current,
+          gridSize: config.gridSize,
+          timeLimit: config.timeLimit,
+          rounds: config.rounds,
+          colorCount: config.colorCount
+        }
+      };
+
+      console.log('📤 Starting Circle Sort game:', startGameMessage);
+      wsRef.current.send(JSON.stringify(startGameMessage));
+    }
   };
 
   const handleSubmitGameResult = (result) => {

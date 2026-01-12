@@ -384,6 +384,23 @@ function MessageItem({ message, currentUserId, gameState, circleGameState, isOwn
       );
     }
 
+    if (payload.gameType === 'circle-sort' && payload.action === 'countdown') {
+      const { nextRound, countdown } = payload.data;
+
+      return (
+        <div className="game-event">
+          <div className="tournament-countdown">
+            <h3>🏆 Tournament</h3>
+            <div className="countdown-content">
+              <p className="countdown-text">Next Round</p>
+              <div className="countdown-number">{countdown}</div>
+              <p className="countdown-info">Round {nextRound} starting...</p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     if (payload.gameType === 'circle-sort' && payload.action === 'final') {
       const { results, totalRounds } = payload.data;
 
