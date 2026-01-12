@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { CircleSortGameWrapper, CircleSortForm } from './CircleSort';
+import { CircleSortGame, CircleSortForm } from './CircleSort';
 import './ChatRoom.css';
 
 function ChatRoom({
@@ -342,7 +342,7 @@ function MessageItem({ message, currentUserId, gameState, circleGameState, isOwn
 
       return (
         <div className="game-event">
-          <CircleSortGameWrapper
+          <CircleSortGame
             gameData={payload.data}
             currentUserId={currentUserId}
             isActive={isActive}

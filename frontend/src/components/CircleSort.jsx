@@ -1,43 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import './CircleSort.css';
 
-// Wrapper for desktop overlay
-function CircleSortGameWrapper({ gameData, currentUserId, isActive, onSubmitResult }) {
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
-
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth <= 768);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  if (isMobile) {
-    // Mobile: render inline
-    return (
-      <CircleSortGame
-        gameData={gameData}
-        currentUserId={currentUserId}
-        isActive={isActive}
-        onSubmitResult={onSubmitResult}
-      />
-    );
-  }
-
-  // Desktop: render as overlay
-  return (
-    <div className="circle-sort-overlay">
-      <div className="circle-sort-overlay-content">
-        <CircleSortGame
-          gameData={gameData}
-          currentUserId={currentUserId}
-          isActive={isActive}
-          onSubmitResult={onSubmitResult}
-        />
-      </div>
-    </div>
-  );
-}
-
 // Circle component with bounce animation
 function Circle({ color, onClick, disabled }) {
   const [isAnimating, setIsAnimating] = useState(false);
@@ -320,4 +283,4 @@ function CircleSortForm({ onSubmit, onCancel }) {
   );
 }
 
-export { CircleSortGame, CircleSortGameWrapper, CircleSortForm };
+export { CircleSortGame, CircleSortForm };

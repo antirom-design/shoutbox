@@ -1,51 +1,10 @@
 /* Minimal Circle Sort Game Styles */
 
-/* Desktop Overlay */
-.circle-sort-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.65);
-  backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-  padding: 20px;
-  animation: fadeIn 0.2s ease;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-.circle-sort-overlay-content {
-  animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 .circle-sort-game {
   width: 100%;
   max-width: 420px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 16px;
   background: linear-gradient(135deg, #fafafa 0%, #ffffff 100%);
   border: 1px solid #e0e0e0;
   border-radius: 8px;
@@ -58,15 +17,15 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
-  padding-bottom: 14px;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .game-round,
 .game-timer,
 .game-stats {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
   color: #666;
   letter-spacing: 0.3px;
@@ -75,7 +34,7 @@
 .game-timer {
   font-variant-numeric: tabular-nums;
   transition: all 0.3s ease;
-  padding: 4px 10px;
+  padding: 3px 8px;
   border-radius: 4px;
   background: rgba(0, 0, 0, 0.03);
 }
@@ -104,8 +63,8 @@
 /* Circle Grid */
 .circle-grid {
   display: grid;
-  gap: 10px;
-  margin-bottom: 16px;
+  gap: 8px;
+  margin-bottom: 12px;
   aspect-ratio: 1;
 }
 
@@ -161,10 +120,11 @@
 /* Game Progress */
 .game-progress {
   text-align: center;
-  font-size: 12px;
+  font-size: 11px;
   color: #999;
   font-weight: 400;
   letter-spacing: 0.3px;
+  margin-top: 8px;
 }
 
 .game-complete {
@@ -408,49 +368,13 @@
   font-weight: 600;
 }
 
-/* Desktop Optimizations - overlay gets full size, better shadows */
+/* Desktop Optimizations */
 @media (min-width: 769px) {
-  .circle-sort-overlay .circle-sort-game {
-    max-width: 880px;
-    padding: 40px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3),
-                0 10px 30px rgba(0, 0, 0, 0.2),
-                0 0 0 1px rgba(0, 0, 0, 0.05);
+  .circle-sort-game {
+    max-width: 420px;
   }
 
-  .circle-sort-overlay .game-header {
-    margin-bottom: 40px;
-    padding-bottom: 24px;
-  }
-
-  .circle-sort-overlay .game-round,
-  .circle-sort-overlay .game-timer,
-  .circle-sort-overlay .game-stats {
-    font-size: 24px;
-  }
-
-  .circle-sort-overlay .game-timer {
-    padding: 8px 20px;
-    border-radius: 8px;
-  }
-
-  .circle-sort-overlay .circle-grid {
-    gap: 20px;
-    margin-bottom: 32px;
-  }
-
-  .circle-sort-overlay .circle {
-    border-width: 3px;
-  }
-
-  .circle-sort-overlay .game-progress {
-    margin-top: 16px;
-    font-size: 20px;
-  }
-
-  /* Compact leaderboard on desktop */
   .circle-sort-result {
-    padding: 16px;
     max-width: 420px;
   }
 }
