@@ -4,10 +4,12 @@
   width: 100%;
   max-width: 420px;
   margin: 0 auto;
-  padding: 24px;
-  background: #ffffff;
-  border: 1px solid #e5e5e5;
-  border-radius: 2px;
+  padding: 20px;
+  background: linear-gradient(135deg, #fafafa 0%, #ffffff 100%);
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06),
+              0 0 0 1px rgba(0, 0, 0, 0.02);
 }
 
 /* Game Header */
@@ -15,41 +17,53 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid #f0f0f0;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .game-round,
 .game-timer,
 .game-stats {
   font-size: 13px;
-  font-weight: 400;
+  font-weight: 500;
   color: #666;
   letter-spacing: 0.3px;
 }
 
 .game-timer {
   font-variant-numeric: tabular-nums;
-  transition: color 0.3s ease;
+  transition: all 0.3s ease;
+  padding: 4px 10px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.03);
 }
 
 .timer-green {
-  color: #666;
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.08);
 }
 
 .timer-orange {
-  color: #ff9500;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.1);
 }
 
 .timer-red {
-  color: #ff3b30;
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+  animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
 }
 
 /* Circle Grid */
 .circle-grid {
   display: grid;
-  gap: 8px;
+  gap: 10px;
   margin-bottom: 16px;
   aspect-ratio: 1;
 }
@@ -59,20 +73,30 @@
   aspect-ratio: 1;
   border-radius: 50%;
   cursor: pointer;
-  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-              opacity 0.15s ease;
-  border: 1px solid rgba(0, 0, 0, 0.15);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.2s ease;
+  border: 2px solid rgba(255, 255, 255, 0.8);
   opacity: 1;
   box-sizing: border-box;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15),
+              0 1px 3px rgba(0, 0, 0, 0.1),
+              inset 0 -2px 4px rgba(0, 0, 0, 0.1),
+              inset 0 2px 4px rgba(255, 255, 255, 0.3);
+  position: relative;
 }
 
 .circle:hover {
-  opacity: 1;
   transform: scale(1.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2),
+              0 2px 6px rgba(0, 0, 0, 0.15),
+              inset 0 -2px 4px rgba(0, 0, 0, 0.1),
+              inset 0 2px 4px rgba(255, 255, 255, 0.4);
 }
 
 .circle:active {
-  transform: scale(0.96);
+  transform: scale(0.94);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2),
+              inset 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
 /* Bounce Animation - subtle */
@@ -85,7 +109,11 @@
     transform: scale(1);
   }
   50% {
-    transform: scale(1.12);
+    transform: scale(1.15);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25),
+                0 3px 8px rgba(0, 0, 0, 0.18),
+                inset 0 -2px 4px rgba(0, 0, 0, 0.1),
+                inset 0 2px 4px rgba(255, 255, 255, 0.4);
   }
 }
 
@@ -105,13 +133,14 @@
 
 /* Configuration Form */
 .circle-sort-form {
-  background: white;
-  border: 1px solid #e5e5e5;
-  border-radius: 2px;
+  background: linear-gradient(135deg, #fafafa 0%, #ffffff 100%);
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
   padding: 32px;
   max-width: 360px;
   width: 90%;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12),
+              0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .circle-sort-form h2 {
@@ -146,25 +175,30 @@
 .option-btn {
   flex: 1;
   padding: 10px 16px;
-  background: #fafafa;
-  border: 1px solid #e5e5e5;
-  border-radius: 2px;
+  background: #ffffff;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 6px;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   font-size: 13px;
   color: #666;
-  font-weight: 400;
+  font-weight: 500;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .option-btn:hover {
-  background: #f5f5f5;
-  border-color: #d0d0d0;
+  background: #f8f8f8;
+  border-color: #c0c0c0;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
 .option-btn.active {
-  background: #000;
+  background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
   color: #fff;
   border-color: #000;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2),
+              inset 0 1px 2px rgba(255, 255, 255, 0.1);
 }
 
 /* Form Actions */
@@ -191,32 +225,40 @@
 }
 
 .btn-primary {
-  background: #000;
+  background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
   color: #fff;
-  padding: 10px 24px;
+  padding: 11px 28px;
   border: none;
-  border-radius: 2px;
+  border-radius: 6px;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   letter-spacing: 0.3px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2),
+              inset 0 1px 2px rgba(255, 255, 255, 0.1);
 }
 
 .btn-primary:hover {
-  background: #333;
+  background: linear-gradient(135deg, #1a1a1a 0%, #333333 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25),
+              inset 0 1px 2px rgba(255, 255, 255, 0.1);
 }
 
 .btn-primary:active {
-  transform: translateY(1px);
+  transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
 }
 
 /* Leaderboard - Minimal */
 .circle-sort-result {
-  background: #ffffff;
-  border: 1px solid #e5e5e5;
-  border-radius: 2px;
-  padding: 24px;
+  background: linear-gradient(135deg, #fafafa 0%, #ffffff 100%);
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06),
+              0 0 0 1px rgba(0, 0, 0, 0.02);
 }
 
 .circle-sort-result h3 {
@@ -249,17 +291,20 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  background: #fafafa;
-  padding: 12px 16px;
-  border-radius: 2px;
-  border: 1px solid #f0f0f0;
-  transition: all 0.15s ease;
+  background: #ffffff;
+  padding: 14px 16px;
+  border-radius: 8px;
+  border: 1.5px solid #e8e8e8;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .leaderboard-item:first-child {
-  background: #000;
+  background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
   color: #fff;
   border-color: #000;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2),
+              inset 0 1px 2px rgba(255, 255, 255, 0.1);
 }
 
 .leaderboard-item:first-child .player-name {
@@ -277,7 +322,9 @@
 }
 
 .leaderboard-item:hover {
-  border-color: #e0e0e0;
+  border-color: #d0d0d0;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
 .medal {
@@ -320,15 +367,37 @@
   font-weight: 600;
 }
 
-/* Mobile Optimizations */
-@media (max-width: 768px) {
+/* Desktop Optimizations - prevent scrolling */
+@media (min-width: 769px) {
   .circle-sort-game {
-    padding: 16px;
+    padding: 18px;
   }
 
   .game-header {
     margin-bottom: 16px;
     padding-bottom: 12px;
+  }
+
+  .circle-grid {
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .game-progress {
+    margin-top: 8px;
+  }
+}
+
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+  .circle-sort-game {
+    padding: 16px;
+    border-radius: 6px;
+  }
+
+  .game-header {
+    margin-bottom: 14px;
+    padding-bottom: 10px;
   }
 
   .game-round,
@@ -337,16 +406,22 @@
     font-size: 11px;
   }
 
+  .game-timer {
+    padding: 3px 8px;
+  }
+
   .circle-grid {
-    gap: 6px;
+    gap: 8px;
+    margin-bottom: 12px;
   }
 
   .circle {
-    border-width: 1px;
+    border-width: 1.5px;
   }
 
   .circle-sort-form {
     padding: 24px;
+    border-radius: 10px;
   }
 
   .circle-sort-form h2 {
@@ -359,13 +434,15 @@
   }
 
   .option-btn {
-    padding: 8px 12px;
+    padding: 9px 12px;
     font-size: 12px;
+    border-radius: 5px;
   }
 
   .btn-primary {
-    padding: 8px 20px;
+    padding: 10px 24px;
     font-size: 12px;
+    border-radius: 5px;
   }
 
   .btn-text {
@@ -373,9 +450,15 @@
     font-size: 12px;
   }
 
+  .circle-sort-result {
+    padding: 16px;
+    border-radius: 6px;
+  }
+
   .leaderboard-item {
-    padding: 10px 12px;
-    gap: 8px;
+    padding: 12px 14px;
+    gap: 10px;
+    border-radius: 6px;
   }
 
   .medal {
