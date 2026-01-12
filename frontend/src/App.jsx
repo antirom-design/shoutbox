@@ -30,7 +30,7 @@ function App() {
   const [participants, setParticipants] = useState([]);
   const [pollState, setPollState] = useState(null);
   const [circleGameState, setCircleGameState] = useState(null);
-  const [tournamentState, setTournamentState] = useState(null); // { active: bool, currentRound: number }
+  const [tournamentState, setTournamentState] = useState(null); // { active: bool, currentRound: number, scores: {} }
   const [error, setError] = useState(null);
   const [isHousemaster, setIsHousemaster] = useState(false);
   const [autoJoinRoom, setAutoJoinRoom] = useState(null);
@@ -295,6 +295,12 @@ function App() {
         break;
 
       case 'circleSortEnded':
+        // Skip if in tournament mode - let circleSortGameEnded handle it
+        if (tournamentState?.active) {
+          setCircleGameState({ active: false });
+          break;
+        }
+
         setCircleGameState({ active: false });
 
         // Remove the active game message and replace with results
@@ -346,25 +352,45 @@ function App() {
       case 'circleSortGameEnded':
         // Check if this is part of a tournament
         if (tournamentState?.active && tournamentState.currentRound < 3) {
-          // Tournament in progress - show round results
-          const roundMsg = {
-            id: nanoid(),
-            type: 'game-event',
-            timestamp: Date.now(),
-            sender: null,
-            payload: {
-              gameType: 'circle-sort',
-              action: 'result',
-              data: {
-                results: data.results,
-                gridSize: tournamentState.currentRound === 1 ? 2 : tournamentState.currentRound === 2 ? 4 : 8,
-                timeLimit: tournamentState.currentRound === 1 ? 10 : tournamentState.currentRound === 2 ? 20 : 30,
-                round: tournamentState.currentRound,
-                totalRounds: 3
-              }
+          // Accumulate scores for this round
+          const updatedScores = { ...tournamentState.scores };
+          data.results.forEach(result => {
+            if (!updatedScores[result.userId]) {
+              updatedScores[result.userId] = {
+                userId: result.userId,
+                userName: result.userName,
+                totalScore: 0
+              };
             }
-          };
-          setMessages(prev => [...prev, roundMsg]);
+            updatedScores[result.userId].totalScore += result.score;
+          });
+
+          // Remove active game message and add round results
+          setMessages(prev => {
+            const withoutGame = prev.filter(msg =>
+              !(msg.type === 'game-event' && msg.payload.gameType === 'circle-sort' && msg.payload.action === 'start')
+            );
+
+            const roundMsg = {
+              id: nanoid(),
+              type: 'game-event',
+              timestamp: Date.now(),
+              sender: null,
+              payload: {
+                gameType: 'circle-sort',
+                action: 'result',
+                data: {
+                  results: data.results,
+                  gridSize: tournamentState.currentRound === 1 ? 2 : tournamentState.currentRound === 2 ? 4 : 8,
+                  timeLimit: tournamentState.currentRound === 1 ? 10 : tournamentState.currentRound === 2 ? 20 : 30,
+                  round: tournamentState.currentRound,
+                  totalRounds: 3
+                }
+              }
+            };
+
+            return [...withoutGame, roundMsg];
+          });
 
           // Add winner badges to top 3 participants
           if (data.results && data.results.length > 0) {
@@ -403,7 +429,7 @@ function App() {
             // Start next round after 3 seconds
             setTimeout(() => {
               const nextRound = tournamentState.currentRound + 1;
-              setTournamentState({ active: true, currentRound: nextRound });
+              setTournamentState({ active: true, currentRound: nextRound, scores: updatedScores });
 
               // Determine next round settings
               let gridSize, timeLimit;
@@ -431,28 +457,59 @@ function App() {
             }, 3000);
           }, 500);
         } else if (tournamentState?.active && tournamentState.currentRound === 3) {
+          // Accumulate scores for final round
+          const updatedScores = { ...tournamentState.scores };
+          data.results.forEach(result => {
+            if (!updatedScores[result.userId]) {
+              updatedScores[result.userId] = {
+                userId: result.userId,
+                userName: result.userName,
+                totalScore: 0
+              };
+            }
+            updatedScores[result.userId].totalScore += result.score;
+          });
+
+          // Calculate cumulative results
+          const cumulativeResults = Object.values(updatedScores)
+            .sort((a, b) => b.totalScore - a.totalScore)
+            .map(player => ({
+              userId: player.userId,
+              userName: player.userName,
+              score: player.totalScore
+            }));
+
+
           // Tournament complete - show final results
           setTournamentState(null);
 
-          const finalMsg = {
-            id: nanoid(),
-            type: 'game-event',
-            timestamp: Date.now(),
-            sender: null,
-            payload: {
-              gameType: 'circle-sort',
-              action: 'final',
-              data: {
-                results: data.results,
-                totalRounds: 3
+          // Remove active game message and add final results
+          setMessages(prev => {
+            const withoutGame = prev.filter(msg =>
+              !(msg.type === 'game-event' && msg.payload.gameType === 'circle-sort' && msg.payload.action === 'start')
+            );
+
+            const finalMsg = {
+              id: nanoid(),
+              type: 'game-event',
+              timestamp: Date.now(),
+              sender: null,
+              payload: {
+                gameType: 'circle-sort',
+                action: 'final',
+                data: {
+                  results: cumulativeResults,
+                  totalRounds: 3
+                }
               }
-            }
-          };
-          setMessages(prev => [...prev, finalMsg]);
+            };
+
+            return [...withoutGame, finalMsg];
+          });
 
           // Champion badge
-          if (data.results && data.results.length > 0) {
-            const winnerId = data.results[0].userId;
+          if (cumulativeResults && cumulativeResults.length > 0) {
+            const winnerId = cumulativeResults[0].userId;
             setParticipants(prev => prev.map(p => ({
               ...p,
               isWinner: p.id === winnerId
@@ -692,8 +749,8 @@ function App() {
 
     // Tournament mode: 3 rounds with progressive difficulty
     if (config.tournament) {
-      // Set tournament state
-      setTournamentState({ active: true, currentRound: 1 });
+      // Set tournament state with empty scores object
+      setTournamentState({ active: true, currentRound: 1, scores: {} });
 
       // Round 1: 2x2, 10 sec
       const startGameMessage = {
